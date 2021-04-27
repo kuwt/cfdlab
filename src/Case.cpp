@@ -178,6 +178,41 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    bool isSimulate = true;
+
+    while(t < _t_end)
+    {
+        /*****
+         apply boundary
+        ******/
+        for (int i = 0; i < _boundaries.size(); ++i)
+        {
+            _boundaries[i]->apply(_field);
+        }
+        /*****
+         update field
+        ******/
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+        _field.calculate_velocities(_grid);
+
+        /*****
+        increment time 
+        ******/
+        timestep++;
+        t += dt;
+
+        /*****
+         Compute time step for next iteration
+        ******/
+        dt = _field.calculate_dt();
+    }
+
+    /*****
+     Output the fields in the end
+    ******/
+    output_vtk(timestep);
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
