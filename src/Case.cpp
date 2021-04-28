@@ -213,6 +213,7 @@ void Case::simulate() {
      Output the fields in the end
     ******/
     output_vtk(timestep);
+    output_counter++;
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
