@@ -179,7 +179,7 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    bool isSimulate = true;
+    //bool isSimulate = true;
 
     while(t < _t_end)
     {
@@ -190,11 +190,16 @@ void Case::simulate() {
         {
             _boundaries[i]->apply(_field);
         }
+
         /*****
          update field
         ******/
-        _field.calculate_fluxes(_grid);
+         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
+
+        //loops here a number of times 
+        double res = _pressure_solver->solve(_field,_grid,_boundaries);
+        
         _field.calculate_velocities(_grid);
 
         /*****
