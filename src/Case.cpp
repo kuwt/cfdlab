@@ -197,7 +197,7 @@ void Case::simulate() {
 
         //loops here a number of times 
         bool isPressureSolverConverge = false;
-        for (int it = 0; it < _max_iter; ++it) (it < _max_iter &&)
+        for (int it = 0; it < _max_iter; ++it)
         {
             double res = _pressure_solver->solve(_field,_grid,_boundaries);
             if (res < _tolerance)
@@ -208,7 +208,7 @@ void Case::simulate() {
         }
         if (!isPressureSolverConverge)
         {
-            std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n"
+            std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
         }
         
         _field.calculate_velocities(_grid);
@@ -222,7 +222,7 @@ void Case::simulate() {
         /*****
          Compute time step for next iteration
         ******/
-        dt = _field.calculate_dt();
+        dt = _field.calculate_dt(_grid);
     }
 
     /*****
