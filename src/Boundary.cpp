@@ -8,15 +8,36 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
     : _cells(cells), _wall_temperature(wall_temperature) {} //TODO: todo later, currently no temperature
 
 void FixedWallBoundary::apply(Fields &field) {
+    for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
+    {
+        // set well defined point
+        if (_cells[cell_iter]->is_border(border_position::LEFT) ) // left
+        {
+             field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+        }
+        if (_cells[cell_iter]->is_border(border_position::RIGHT) )  // right, 
+        {
+             field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0; //the minus 1 is to account the fact the the right border is just the right ghost border
+        }
+        if (_cells[cell_iter]->is_border(border_position::BOTTOM) )  // bottom
+        {
+             field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+        }
 
-const std::vector<double> u_fixedWallBoundary_values(_u.jmax,0); 
-const std::vector<double> v_fixedWallBoundary_values(_u.jmax,0); 
-
-_U.set_col(u_fixedWallBoundary_values, jmax+1);
-
-
-
-
+         // set intermediate point
+        if (_cells[cell_iter]->is_border(border_position::LEFT) ) // left
+        {
+             field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
+        }
+        if (_cells[cell_iter]->is_border(border_position::RIGHT) )  // right
+        {
+              field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+        }
+        if (_cells[cell_iter]->is_border(border_position::BOTTOM) )  // bottom
+        {
+             field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) =  -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j())+1;
+        }
+    }
 }
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
@@ -29,8 +50,14 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, 
 
 void MovingWallBoundary::apply(Fields &field) {
 
-const std::vector<double>u_movingwallboundry_values (u.imax(),1);// fix U vs u
-const std::vector<double>v_movingwallboundry_values (_v.imax(),0);
-    _u.set_row(u_movingwallboundry_values, imax+1);
-    _v.set_row(u_movingwallboundry_values, imax+1);
+    
+    for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
+    {
+        if (_cells[cell_iter]->is_border(border_position::BOTTOM) ) // top,
+        {
+            std::cout << " top "<< "\n";
+            field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0; //the minus 1 is to account the fact the the top border is just the top ghost border
+            field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
+        }
+    }
 }
