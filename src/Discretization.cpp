@@ -61,6 +61,4 @@ double Discretization::sor_helper(const Matrix<double> &P, int i, int j) {
     return result;
 }
 
-double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset) {
-    
-}//TODO:
+double Discretization::interpolate(const Matrix<double> &A, int i, int j, int i_offset, int j_offset) {}//TODO:
