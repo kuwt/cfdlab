@@ -29,7 +29,7 @@ message (STATUS "VTK_VERSION: ${VTK_VERSION}")
 include(${VTK_USE_FILE})
 
 # Filesystem
-set(gpp9 False)
+set(gpp9 True)
 #set(gpp9 True)
 if(gpp9)
     message("g++ Version is 9 or higher")
