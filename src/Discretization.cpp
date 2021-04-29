@@ -14,6 +14,7 @@ Discretization::Discretization(double dx, double dy, double gamma) {
 
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
     // du2/dx + duv/dy
+    // implementation of equation (4)
     double du2dx = 1/_dx * ( pow((U(i,j)+U(i+1,j))/2, 2) - \
                              pow((U(i-1,j)+U(i,j))/2, 2) )+ \
                    _gamma / _dx * ( fabs(U(i,j)+U(i+1,j)) * (U(i,j)-U(i+1,j)) / 4 - \

@@ -31,6 +31,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     
     // calculate for fluid_cells(inner cells)
     // NOTE: ranges of i, j for _F,_G are different
+    // implementation of equation (9)
     for (int i = 1; i <= imax-1; ++i){ 
         for (int j = 1; j <= jmax; ++j){
             convective_term = Discretization::convection_u(_U, _V, i, j);
@@ -38,7 +39,7 @@ void Fields::calculate_fluxes(Grid &grid) {
             _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);           
         }
     }
-
+    // implementation of equation (10)
     for (int i = 1; i <= imax; ++i){ 
         for (int j = 1; j <= jmax-1; ++j){
             convective_term = Discretization::convection_v(_U, _V, i, j);
@@ -108,18 +109,23 @@ double Fields::calculate_dt(Grid &grid) {
     int imax = grid.imax();
     int jmax = grid.jmax();
 
+    // finding umax in the domain
     for (int i = 0; i <= imax; ++i){
-        for (int j = 0; j<= jmax+1; ++j){
+        for (int j = 0; j<= jmax; ++j){
             umax =  _U(i, j) > umax ? _U(i,j) : umax;
         }
     }
-    for (int i = 0; i <= imax+1; ++i){
+
+    // finding vmax in the domain
+    for (int i = 0; i <= imax; ++i){
         for (int j = 0; j<= jmax; ++j){
             vmax =  _V(i, j) > vmax ? _V(i,j) : vmax;
         }
     } 
     // umax = * std::max_element(_U.data(), _U.data()+_U.size());
     // vmax = * std::max_element(_V.data(), _U.data()+_V.size());
+
+    // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
     _dt = _tau * std::min( {dx/abs(umax), 
                             dy/abs(vmax), 
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu)});
