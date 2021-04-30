@@ -181,6 +181,7 @@ void Case::simulate() {
 
     while(t < _t_end)
     {
+	 std::cout << "Simulating step = " << timestep << ", time t = " << t << " , u at (25,0) = "<< _field.u(25,0)<<"\n";
         /*****
          apply boundary
         ******/
