@@ -12,6 +12,22 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
 
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
 
+    // apply pressure boundary
+    {
+        int imax = grid.imax();
+        int jmax = grid.jmax();
+        for (int j = 1; j <= jmax; ++j){
+            field.p(0, j) = field.p(1, j);
+            field.p(imax+1, j) = field.p(imax, j);
+        } 
+
+        for (int i = 1; i <= imax; ++i){
+            field.p(i, 0) = field.p(i, 1);
+            field.p(i, jmax+1) = field.p(i, jmax);
+        } 
+    }
+
+      // update p according to stencil
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
@@ -20,6 +36,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                         coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
 
+     // compute residual
     double res = 0.0;
     double rloc = 0.0;
 
