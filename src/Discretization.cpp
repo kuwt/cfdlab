@@ -47,13 +47,13 @@ double Discretization::diffusion(const Matrix<double> &A, int i, int j) {
     // V: nu * (d2v/dy2 + d2v/dy2)
     // the same operation applied for both U and V: U ==> A
     double result = ( A(i+1,j) - 2.0*A(i,j) + A(i-1,j) ) / (_dx * _dx) +
-                    ( A(i,j+1) - 2.0*A(i,j) + A(i,j-1) ) / (_dx * _dx);
+                    ( A(i,j+1) - 2.0*A(i,j) + A(i,j-1) ) / (_dy * _dy);
     return result;
 }//TODO: //DONE
 
 double Discretization::laplacian(const Matrix<double> &P, int i, int j) {
     double result = (P(i + 1, j) - 2.0 * P(i, j) + P(i - 1, j)) / (_dx * _dx) +
-                    (P(i, j + 1) - 2.0 * P(i, j) + P(i, j - 1)) / (_dx * _dx);
+                    (P(i, j + 1) - 2.0 * P(i, j) + P(i, j - 1)) / (_dy * _dy);
     return result;
 }
 
