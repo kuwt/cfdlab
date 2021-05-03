@@ -1,4 +1,3 @@
-
 This repository is a CFD Solver developed by Qianqian, Christina and Wing To from TUM CSE. It is built on top of Fluidchen from TUM Informatics, Chair of Scientific Computing in Computer Science
 
 ## Software Requirements
@@ -45,4 +44,6 @@ This will run the case file and create the output folder `/full_path_to_this_rep
 
 ## Result Visualization
 
-You can use paraview to visualize the output .vtk file.
+You can use paraview to visualize the output .vtk file. Here is an example showing the velocity magnitude of the LidDrivenCavity problem.
+
+![sample LidDrivenCavity Velocity](docs/images/LidDrivenCavitySampleVelocityImage.png "Velocity")
