@@ -181,7 +181,8 @@ void Case::simulate() {
 
     while(t < _t_end)
     {
-	 std::cout << "Simulating step = " << timestep << ", time t = " << t << " , u at (25,0) = "<< _field.u(25,0)<<"\n";
+	     std::cout << "Simulating step = " << timestep << ", time t = " << t << " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
+        
         /*****
          apply boundary
         ******/
@@ -219,6 +220,15 @@ void Case::simulate() {
         ******/
         timestep++;
         t += dt;
+
+        /*****
+        intermediate output field
+        ******/
+        if (t > _output_freq * output_counter)
+        {
+            output_vtk(timestep);
+            output_counter = output_counter + 1;
+        }
 
         /*****
          Compute time step for next iteration
