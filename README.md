@@ -19,8 +19,8 @@ Detailed information is given below.
 ## Installing
 
 ```shell
-git clone https://gitlab.lrz.de/oguzziya/GroupX_CFDLab.git
-cd GroupX_CFDLab
+git clone https://gitlab.lrz.de/cfdlab_2021/fluidchen-skeleton.git GroupC_CFDLab
+cd GroupC_CFDLab
 mkdir build && cd build
 cmake ..
 make
