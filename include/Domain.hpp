@@ -28,7 +28,7 @@ struct Domain {
     /// Number of cells in y direction
     int size_y{-1};
 
-    /// Number of cells in x direction, not-decomposed
+    /// Number of cells in x direction, not-decomposed //NOTE ?
     int domain_size_x{-1};
     /// Number of cells in y direction, not-decomposed
     int domain_size_y{-1};

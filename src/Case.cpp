@@ -178,6 +178,69 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    while(t < _t_end)
+    {
+	     std::cout << "Simulating step = " << timestep << ", time t = " << t << " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
+        
+        /*****
+         apply boundary
+        ******/
+        for (int i = 0; i < _boundaries.size(); ++i)
+        {
+            _boundaries[i]->apply(_field);
+        }
+
+        /*****
+         update field
+        ******/
+        _field.calculate_fluxes(_grid);
+        _field.calculate_rs(_grid);
+
+        //loops here a number of times 
+        bool isPressureSolverConverge = false;
+        for (int it = 0; it < _max_iter; ++it)
+        {
+            double res = _pressure_solver->solve(_field,_grid,_boundaries);
+            if (res < _tolerance)
+            {
+                isPressureSolverConverge = true;
+                break;
+            }
+        }
+        if (!isPressureSolverConverge)
+        {
+            std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
+        }
+        
+        _field.calculate_velocities(_grid);
+
+        /*****
+        increment time 
+        ******/
+        timestep++;
+        t += dt;
+
+        /*****
+        intermediate output field
+        ******/
+        if (t > _output_freq * output_counter)
+        {
+            output_vtk(timestep);
+            output_counter = output_counter + 1;
+        }
+
+        /*****
+         Compute time step for next iteration
+        ******/
+        dt = _field.calculate_dt(_grid);
+    }
+
+    /*****
+     Output the fields in the end
+    ******/
+    output_vtk(timestep);
+    output_counter++;
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -263,7 +326,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.imin = 0;
     domain.jmin = 0;
-    domain.imax = imax_domain + 2;
+    domain.imax = imax_domain + 2; //NOTE: build domain with ghost cells
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
