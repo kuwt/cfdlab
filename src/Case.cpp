@@ -181,8 +181,6 @@ void Case::simulate() {
 
     while(t < _t_end)
     {
-	     std::cout << "Simulating step = " << timestep << ", time t = " << t << " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
-        
         /*****
          apply boundary
         ******/
@@ -198,17 +196,13 @@ void Case::simulate() {
         _field.calculate_rs(_grid);
 
         //loops here a number of times 
-        bool isPressureSolverConverge = false;
-        for (int it = 0; it < _max_iter; ++it)
+        int it = 0;
+        double res = _tolerance + 1.0; // init res to be greater than tolerance to enter the loop
+        while (res > _tolerance && it++ < _max_iter)
         {
-            double res = _pressure_solver->solve(_field,_grid,_boundaries);
-            if (res < _tolerance)
-            {
-                isPressureSolverConverge = true;
-                break;
-            }
+            res = _pressure_solver->solve(_field,_grid,_boundaries);
         }
-        if (!isPressureSolverConverge)
+        if (it >= _max_iter)
         {
             std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
         }
@@ -230,6 +224,18 @@ void Case::simulate() {
             output_counter = output_counter + 1;
         }
 
+       
+        /*****
+         Compute Courant number
+        ******/
+        double CourantNum = fabs(_field.u(_grid.imax()/2,_grid.jmax()/2)) * dt/_grid.dx();
+
+        /*****
+         Console logging
+        ******/
+         std::cout << "Simulating step = " << timestep << ", time t = " << t << ", pressure solver res = " << res << ", CourantNum = "<< CourantNum << "\n";
+         // " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
+        
         /*****
          Compute time step for next iteration
         ******/
