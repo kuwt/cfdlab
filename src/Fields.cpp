@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-
+// Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
 Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
     : _nu(nu), _dt(dt), _tau(tau) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
@@ -15,6 +15,7 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
+// need to use the grid information more extensively by using for each cell, checking if the cell is a fluid or not
 void Fields::calculate_fluxes(Grid &grid) {
     /* NOTE:
      inside grid, there are different cell types: fluid, fixed_wall, moving_wall

@@ -43,6 +43,7 @@ void Grid::build_lid_driven_cavity() {
 }
 
 //to do, need to adapt to geometry
+// have to do the  cell neighbour assigment for each cell
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
     int i = 0;
