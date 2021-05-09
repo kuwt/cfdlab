@@ -40,6 +40,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
 
+    std::string  geom_name; /*geometry file name for the problem*/
+    double UIN;      /* inflow velocity x-direction */
+    double VIN;      /* inflow velocity y-direction */
+    int wallnum;     /* wall num */
+    std::map<int, double> wall_vel;  /* wall velocities */
+
+    wallnum = 0;     /* init wall num to zero for easier file reading*/
     if (file.is_open()) {
 
         std::string var;
@@ -66,16 +73,29 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+                if (var == "geom_name") file >> geom_name;
+                if (var == "UIN") file >> UIN;
+                if (var == "VIN") file >> VIN;
+                if (var == "num_of_walls") file >> wallnum;
+                for (int i = 0; i < wallnum; ++i){
+                    int wallIdx = i + 3;
+                    std::string str = "wall_vel_" + std::to_string(wallIdx);
+                    if (var == str) {
+                        double tmpVelocity = 0.;
+                        file >> tmpVelocity;
+                        wall_vel.insert(std::pair<int, double>(wallIdx, tmpVelocity));
+                    }
+                }
             }
         }
     }
     file.close();
 
-    std::map<int, double> wall_vel;
+    _geom_name = geom_name;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-
+ 
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
@@ -97,12 +117,19 @@ Case::Case(std::string file_name, int argn, char **args) {
     _tolerance = eps;
 
     // Construct boundaries
-    if (not _grid.moving_wall_cells().empty()) {
+    if (_geom_name.compare("NONE") == 0) { //LidDrivenCavity
+          if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+        }
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
     }
-    if (not _grid.fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    else{ 
+        //to do: add boundaries, movingWall, FixedWall, inflow, outflow ...
+
+
     }
 }
 
