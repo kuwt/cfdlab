@@ -118,7 +118,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     // Construct boundaries
     if (_geom_name.compare("NONE") == 0) { //LidDrivenCavity
-          if (not _grid.moving_wall_cells().empty()) {
+        if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
         }
@@ -128,8 +128,19 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     else{ 
         //to do: add boundaries, movingWall, FixedWall, inflow, outflow ...
-
-
+        
+        if (not _grid.fixed_wall_cells().empty()) {
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+        }
+        
+        if (not _grid.inflow_cells().empty()) {
+            _boundaries.push_back(std::make_unique<InFlowBoundary>(_grid.inflow_cells(),UIN,VIN));
+        }
+        
+        if (not _grid.outflow_cells().empty()) {
+            _boundaries.push_back(std::make_unique<OutFlowBoundary>(_grid.outflow_cells()));
+        }
+        
     }
 }
 

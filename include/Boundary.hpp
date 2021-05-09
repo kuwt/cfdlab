@@ -56,3 +56,31 @@ class MovingWallBoundary : public Boundary {
     std::map<int, double> _wall_velocity;
     std::map<int, double> _wall_temperature;
 };
+
+/**
+ * @brief Inflow boundary
+ */
+class InFlowBoundary : public Boundary {
+  public:
+    InFlowBoundary(std::vector<Cell *> cells, double inflow_velocity_x, double inflow_velocity_y);
+    virtual ~InFlowBoundary() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+    double _inflow_velocity_x;
+    double _inflow_velocity_y;
+};
+
+/**
+ * @brief Outflow boundary
+ */
+class OutFlowBoundary : public Boundary {
+  public:
+    OutFlowBoundary(std::vector<Cell *> cells);
+    virtual ~OutFlowBoundary() = default;
+    virtual void apply(Fields &field);
+
+  private:
+    std::vector<Cell *> _cells;
+};

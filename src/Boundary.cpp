@@ -59,3 +59,20 @@ void MovingWallBoundary::apply(Fields &field) {
         }
     }
 }
+
+
+
+InFlowBoundary::InFlowBoundary(std::vector<Cell *> cells, double inflow_velocity_x, double inflow_velocity_y)
+    : _cells(cells), _inflow_velocity_x(inflow_velocity_x), _inflow_velocity_y(inflow_velocity_y) {}
+
+void InFlowBoundary::apply(Fields &field) {
+    // to do:  diriclet
+}
+
+
+OutFlowBoundary::OutFlowBoundary(std::vector<Cell *> cells)
+    : _cells(cells){}
+
+void OutFlowBoundary::apply(Fields &field) {
+    // to do: neuman
+}
