@@ -47,6 +47,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     std::map<int, double> wall_vel;  /* wall velocities */
 
     wallnum = 0;     /* init wall num to zero for easier file reading*/
+    geom_name = _geom_name;
     if (file.is_open()) {
 
         std::string var;
@@ -92,6 +93,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     file.close();
 
     _geom_name = geom_name;
+    std::cout << "geom_name = " << geom_name << "\n";
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
@@ -328,6 +330,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
+    // Pressure Array
+    vtkDoubleArray *Geometry = vtkDoubleArray::New();
+    Geometry->SetName("geometry");
+    Geometry->SetNumberOfComponents(1);
+
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
@@ -349,11 +356,23 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
+    // Print Geometry from bottom to top
+    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+            double geometryData = _grid.cell(i, j).wall_id();
+            Geometry->InsertNextTuple(&geometryData);
+        }
+    }
+
+
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetPointData()->AddArray(Velocity);
+
+    // Add Geometry to Structured Grid
+    structuredGrid->GetCellData()->AddArray(Geometry);
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
