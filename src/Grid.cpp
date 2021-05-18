@@ -55,17 +55,20 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
             if (geometry_data.at(i_geom).at(j_geom) == 0) {
+                //fluid cells
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 _fluid_cells.push_back(&_cells(i, j));
+
+                //moving wall cells-lid Driven Cavity
             } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                 _moving_wall_cells.push_back(&_cells(i, j));
+                //Fixed wall Cells-Lid Driven Cavity
             } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::fixed_wall_id) {
-                if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
-                    // Outer walls
+                if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) 
                     _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _fixed_wall_cells.push_back(&_cells(i, j));
-                }
+                
             } else if (geometry_data.at(i_geom).at(j_geom) == 1) {
                 if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
                     // inflow
@@ -73,155 +76,62 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                     _inflow_cells.push_back(&_cells(i, j));
                 }
             } else if (geometry_data.at(i_geom).at(j_geom) == 2) {
-                    // inflow
+                    // outflow
                     _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
                     _outflow_cells.push_back(&_cells(i, j));
                 
-            } else if (geometry_data.at(i_geom).at(j_geom) == 3) {
-                    // inflow
+            } else if (geometry_data.at(i_geom).at(j_geom) >= 3&&geometry_data.at(i_geom).at(j_geom) <=7) {
+                    // fixed wall- No Slip
                     _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                     _fixed_wall_cells.push_back(&_cells(i, j));
             } 
+            else if (geometry_data.at(i_geom).at(j_geom) >= 9&&geometry_data.at(i_geom).at(j_geom) <=12) {
+                    // fixed wall- Free Slip
+                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                    _fixed_wall_cells_free_slip.push_back(&_cells(i, j));
+            } 
+            
             ++i;
         }
         ++j;
     }
 
-    // Corner cell neighbour assigment
-    // Bottom-Left Corner
-    i = 0;
-    j = 0;
-    _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-    _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-    if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::TOP);
-    }
-    if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::RIGHT);
-    }
-    // Top-Left Corner
-    i = 0;
-    j = _domain.size_y + 1;
-    _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-    _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-    if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::BOTTOM);
-    }
-    if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::RIGHT);
-    }
+    //Iterate over all cells and assign fluid borders
+    for (int i = 0; i <= _domain.size_x+1; ++i) {
+        for (int j = 0; j <= _domain.size_y+1; ++j) {
 
-    // Top-Right Corner
-    i = _domain.size_x + 1;
-    j = Grid::_domain.size_y + 1;
-    _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-    _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-    if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::BOTTOM);
-    }
-    if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::LEFT);
-    }
-
-    // Bottom-Right Corner
-    i = Grid::_domain.size_x + 1;
-    j = 0;
-    _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-    _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-    if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::TOP);
-    }
-    if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::LEFT);
-    }
-    // Bottom cells
-    j = 0;
-    for (int i = 1; i < _domain.size_x + 1; ++i) {
-        _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-        _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-        _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-        if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::RIGHT);
-        }
-        if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::LEFT);
-        }
-        if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::TOP);
-        }
-    }
-
-    // Top Cells
-    j = Grid::_domain.size_y + 1;
-
-    for (int i = 1; i < _domain.size_x + 1; ++i) {
-        _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-        _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-        _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-        if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::RIGHT);
-        }
-        if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::LEFT);
-        }
-        if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::BOTTOM);
-        }
-    }
-
-    // Left Cells
-    i = 0;
-    for (int j = 1; j < _domain.size_y + 1; ++j) {
-        _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-        _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-        _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-        if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::RIGHT);
-        }
-        if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::BOTTOM);
-        }
-        if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::TOP);
-        }
-    }
-    // Right Cells
-    i = Grid::_domain.size_x + 1;
-    for (int j = 1; j < _domain.size_y + 1; ++j) {
-        _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-        _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-        _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-        if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::LEFT);
-        }
-        if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::BOTTOM);
-        }
-        if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-            _cells(i, j).add_border(border_position::TOP);
-        }
-    }
-
-    // Inner cells
-    for (int i = 1; i < _domain.size_x + 1; ++i) {
-        for (int j = 1; j < _domain.size_y + 1; ++j) {
-            _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
-            _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
-            _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
-            _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
-
-            if (_cells(i, j).type() != cell_type::FLUID) {
-                if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
-                    _cells(i, j).add_border(border_position::LEFT);
+            if (i >= 1) {
+                _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
+                if (_cells(i, j).type() != cell_type::FLUID) {
+                    if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
+                        _cells(i, j).add_border(border_position::LEFT);
+                    }
                 }
-                if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
-                    _cells(i, j).add_border(border_position::RIGHT);
+            }
+            if (i <= _domain.size_x) {
+                _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
+
+                if (_cells(i, j).type() != cell_type::FLUID) {
+                    if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
+                        _cells(i, j).add_border(border_position::RIGHT);
+                    }
                 }
-                if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-                    _cells(i, j).add_border(border_position::BOTTOM);
+            }
+            if (j >= 1) {
+                _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
+                if (_cells(i, j).type() != cell_type::FLUID) {
+                    if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
+                        _cells(i, j).add_border(border_position::BOTTOM);
+                    }
                 }
-                if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-                    _cells(i, j).add_border(border_position::TOP);
+            }
+            if (j <= _domain.size_y) {
+                _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
+
+                if (_cells(i, j).type() != cell_type::FLUID) {
+                    if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
+                        _cells(i, j).add_border(border_position::TOP);
+                    }
                 }
             }
         }
@@ -287,3 +197,5 @@ const std::vector<Cell *> &Grid::moving_wall_cells() const { return _moving_wall
 const std::vector<Cell *> &Grid::inflow_cells() const { return _inflow_cells; }
 
 const std::vector<Cell *> &Grid::outflow_cells() const { return _outflow_cells; }
+
+const std::vector<Cell *> &Grid::fixed_wall_cells_free_slip() const { return _fixed_wall_cells_free_slip; }
