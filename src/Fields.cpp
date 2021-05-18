@@ -120,13 +120,14 @@ void Fields::calculate_rs(Grid &grid) {
     int jmax = grid.jmax();
     double dx = grid.dx();
     double dy = grid.dy();
-    for (int i = 1; i <= imax; ++i){
-        for (int j = 1; j <= jmax; ++j){
-            _RS(i,j) = 1 / _dt * ((_F(i,j) - _F(i-1, j))/dx + \
+
+    for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+        _RS(i,j) = 1 / _dt * ((_F(i,j) - _F(i-1, j))/dx + \
                                   (_G(i,j) - _G(i, j-1))/dy);
-        }
     }
-} //TODO: //DONE
+}
 
 void Fields::calculate_velocities(Grid &grid) {
     // Equation(7)(8) after solving p at time n+1
@@ -135,18 +136,20 @@ void Fields::calculate_velocities(Grid &grid) {
     double dx = grid.dx();
     double dy = grid.dy();
 
-    for (int i = 1; i <= imax-1; ++i){ 
-        for (int j = 1; j <= jmax; ++j){
-           _U(i, j) = _F(i, j) - _dt/dx * (_P(i+1, j) - _P(i, j));           
+    for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+        if (fluid_cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID)
+        {
+            _U(i, j) = _F(i, j) - _dt/dx * (_P(i+1, j) - _P(i, j));    
         }
-    }
-
-    for (int i = 1; i <= imax; ++i){ 
-        for (int j = 1; j <= jmax-1; ++j){
+      
+        if (fluid_cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)
+        {
             _V(i, j) = _G(i, j) - _dt/dy * (_P(i, j+1) - _P(i, j)); 
         }
     }
-} //TODO: //DONE
+} 
 
 double Fields::calculate_dt(Grid &grid) { 
     // stability condition Equation(13)
