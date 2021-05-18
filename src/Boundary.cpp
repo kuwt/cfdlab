@@ -10,33 +10,61 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 void FixedWallBoundary::apply(Fields &field) {
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
-        // set well defined point
-        if (_cells[cell_iter]->is_border(border_position::RIGHT) ) // left wall means the right handside is the real border
+        if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_NE cells
         {
-             field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
+          field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
         }
-        if (_cells[cell_iter]->is_border(border_position::LEFT) )  // right wall
+        else if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_NW cells
         {
-             field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0; //the minus 1 is to account the fact the the right border is just the right ghost border
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
         }
-        if (_cells[cell_iter]->is_border(border_position::TOP) )  // bottom wall
+        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_SE cells
         {
-             field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-        }
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
 
-         // set intermediate point
-        if (_cells[cell_iter]->is_border(border_position::RIGHT) ) // left wall
-        {
-             field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
         }
-        if (_cells[cell_iter]->is_border(border_position::LEFT) )  // right wall
+        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_SW cells
         {
-              field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+
         }
-        if (_cells[cell_iter]->is_border(border_position::TOP) )  // bottom wall
+        else if (_cells[cell_iter]->is_border(border_position::RIGHT) ) // B_E cells
         {
-             field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) =  -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
         }
+        else if (_cells[cell_iter]->is_border(border_position::LEFT) ) // B_W cells
+        {
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+        }
+        else if (_cells[cell_iter]->is_border(border_position::TOP) )  // B_N cells
+        {
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
+        }
+        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) )  // B_S cells
+        {
+          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
+          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
+          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
+        }
+          
     }
 }
 
@@ -66,7 +94,13 @@ InFlowBoundary::InFlowBoundary(std::vector<Cell *> cells, double inflow_velocity
     : _cells(cells), _inflow_velocity_x(inflow_velocity_x), _inflow_velocity_y(inflow_velocity_y) {}
 
 void InFlowBoundary::apply(Fields &field) {
-    // to do:  diriclet
+    // Dirichlet BC for inflow
+    for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
+    {
+         // assume inflow from left
+         field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = _inflow_velocity_x; 
+         field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
+    }
 }
 
 
@@ -74,5 +108,12 @@ OutFlowBoundary::OutFlowBoundary(std::vector<Cell *> cells)
     : _cells(cells){}
 
 void OutFlowBoundary::apply(Fields &field) {
-    // to do: neuman
+    // Neumann BC for outflow(free-outflow)
+    for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
+    {
+        // assume outflow to right
+         field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+         field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+    }
+
 }
