@@ -88,8 +88,6 @@ void MovingWallBoundary::apply(Fields &field) {
     }
 }
 
-
-
 InFlowBoundary::InFlowBoundary(std::vector<Cell *> cells, double inflow_velocity_x, double inflow_velocity_y)
     : _cells(cells), _inflow_velocity_x(inflow_velocity_x), _inflow_velocity_y(inflow_velocity_y) {}
 
@@ -97,9 +95,10 @@ void InFlowBoundary::apply(Fields &field) {
     // Dirichlet BC for inflow
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
-         // assume inflow from left
-         field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = _inflow_velocity_x; 
-         field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
+        // assume inflow from left
+        field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = _inflow_velocity_x; 
+        field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
+        field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
     }
 }
 
@@ -112,8 +111,9 @@ void OutFlowBoundary::apply(Fields &field) {
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
         // assume outflow to right
-         field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
-         field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+         field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.u(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
+         field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
+         field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j()-1);
     }
 
 }

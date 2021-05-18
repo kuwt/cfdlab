@@ -103,7 +103,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         // assume outflow to right
         int i = outflow_cell->i();
         int j = outflow_cell->j();
-        _F(i , j) = _U(i, j);
+        _F(i-1 , j) = _U(i-1, j);
     }
     for (auto moving_cell : grid.moving_wall_cells()){
         // assume moving wall only on top

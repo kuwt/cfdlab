@@ -12,12 +12,13 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
 
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
 
-    // apply pressure boundary
- {   
+    
+    {   
+     // apply pressure boundary Neumann
         std::vector<Cell*> boundaryCells;
         boundaryCells.insert(boundaryCells.end(), grid.fixed_wall_cells().begin(),grid.fixed_wall_cells().end());
         boundaryCells.insert(boundaryCells.end(), grid.inflow_cells().begin(), grid.inflow_cells().end() );
-        boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
+        //boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
         boundaryCells.insert(boundaryCells.end(), grid.moving_wall_cells().begin(), grid.moving_wall_cells().end() );
         for (auto boundaryCell : boundaryCells)
         {   
@@ -59,6 +60,21 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                 field.p(i, j) = field.p(i, j-1);
             }
             
+        }
+    }
+
+   {   
+     // apply pressure boundary diriclet
+        std::vector<Cell*> boundaryCells;
+        boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
+        for (auto boundaryCell : boundaryCells)
+        {   
+            // for inflow boundary, we assume that it locates at left
+            // for outflow boundary, we assume that it locates at right
+            // for moving wall boundary, we assume that it locates at top
+            int i = boundaryCell->i();
+            int j = boundaryCell->j();
+            field.p(i, j) = 0;
         }
     }
 
