@@ -32,34 +32,85 @@ void Fields::calculate_fluxes(Grid &grid) {
     
     // calculate for fluid_cells(inner cells)
     // NOTE: ranges of i, j for _F,_G are different
-    // implementation of equation (9)
-    for (int i = 1; i <= imax-1; ++i){ 
-        for (int j = 1; j <= jmax; ++j){
-            convective_term = Discretization::convection_u(_U, _V, i, j);
-            diffusion_term = Discretization::diffusion(_U, i, j);           
-            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);           
-        }
+    // implementation of ws1 equation (9)
+    // implementation of ws1 equation (10)
+    for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+
+        convective_term = Discretization::convection_u(_U, _V, i, j);
+        diffusion_term = Discretization::diffusion(_U, i, j);           
+        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
+    
+        convective_term = Discretization::convection_v(_U, _V, i, j);
+        diffusion_term = Discretization::diffusion(_V, i, j);            
+        _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
     }
-    // implementation of equation (10)
-    for (int i = 1; i <= imax; ++i){ 
-        for (int j = 1; j <= jmax-1; ++j){
-            convective_term = Discretization::convection_v(_U, _V, i, j);
-            diffusion_term = Discretization::diffusion(_V, i, j);            
-            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
-        }
-    }
+
 
     // calculate for boundary cells
-    for (int j = 1; j <= jmax; ++j){
-        _F(0, j) = _U(0, j);
-        _F(imax, j) = _U(imax, j);
-    } 
+    for (auto boundary_cell : grid.fixed_wall_cells()){
+        int i = boundary_cell->i();
+        int j = boundary_cell->j();
 
-    for (int i = 1; i <= imax; ++i){
-        _G(i, 0) = _V(i, 0);
-        _G(i, jmax) = _V(i, jmax);
+        if (boundary_cell->is_border(border_position::TOP) && boundary_cell->is_border(border_position::RIGHT) )  // B_NE cells
+        {
+            _F(i, j) = _U(i, j);
+            _G(i, j) = _V(i, j);
+        }
+        else if (boundary_cell->is_border(border_position::TOP) && boundary_cell->is_border(border_position::LEFT) )  // B_NW cells
+        {
+            _F(i-1, j) = _U(i-1, j);
+            _G(i, j) = _V(i, j);
+        }
+        else if (boundary_cell->is_border(border_position::BOTTOM) && boundary_cell->is_border(border_position::RIGHT) )  // B_SE cells
+        {
+            _F(i, j) = _U(i, j);
+            _G(i, j-1) = _V(i, j-1);
+        }
+        else if (boundary_cell->is_border(border_position::BOTTOM) && boundary_cell->is_border(border_position::LEFT) )  // B_SW cells
+        {
+            _F(i-1, j) = _U(i-1, j);
+            _G(i, j-1) = _V(i, j-1);
+        }   
+        else if (boundary_cell->is_border(border_position::RIGHT) ) // B_E cells
+        {
+            _F(i, j) = _U(i, j);
+        }
+        else if (boundary_cell->is_border(border_position::LEFT) ) // B_W cells
+        {
+            _F(i-1, j) = _U(i-1, j);
+        }
+        else if (boundary_cell->is_border(border_position::TOP) )  // B_N cells
+        {
+            _G(i, j) = _V(i, j);
+        }
+        else if (boundary_cell->is_border(border_position::BOTTOM) )  // B_S cells
+        {
+            _G(i, j-1) = _V(i, j-1);
+        }
+        
     }
 
+    for (auto inflow_cell : grid.inflow_cells()){
+        // assume inflow from left
+        int i = inflow_cell->i();
+        int j = inflow_cell->j();
+        _F(i , j) = _U(i, j);
+
+    }
+    for (auto outflow_cell : grid.outflow_cells()){
+        // assume outflow to right
+        int i = outflow_cell->i();
+        int j = outflow_cell->j();
+        _F(i , j) = _U(i, j);
+    }
+    for (auto moving_cell : grid.moving_wall_cells()){
+        // assume moving wall only on top
+        int i = moving_cell->i();
+        int j = moving_cell->j();
+        _G(i, j-1) = _V(i, j-1);
+    }
 
 } //TODO: //DONE
 
