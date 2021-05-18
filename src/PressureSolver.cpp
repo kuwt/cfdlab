@@ -18,7 +18,6 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         std::vector<Cell*> boundaryCells;
         boundaryCells.insert(boundaryCells.end(), grid.fixed_wall_cells().begin(),grid.fixed_wall_cells().end());
         boundaryCells.insert(boundaryCells.end(), grid.inflow_cells().begin(), grid.inflow_cells().end() );
-        //boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
         boundaryCells.insert(boundaryCells.end(), grid.moving_wall_cells().begin(), grid.moving_wall_cells().end() );
         for (auto boundaryCell : boundaryCells)
         {   
@@ -64,7 +63,8 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     }
 
    {   
-     // apply pressure boundary diriclet
+     // apply pressure boundary diriclet, outflow boundary confines velocity gradient so it requires diriclet pressure boundary
+     // according to the forum and https://www.simscale.com/docs/simulation-setup/boundary-conditions/pressure-inlet-and-pressure-outlet/
         std::vector<Cell*> boundaryCells;
         boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
         for (auto boundaryCell : boundaryCells)

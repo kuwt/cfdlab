@@ -111,6 +111,8 @@ void OutFlowBoundary::apply(Fields &field) {
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
         // assume outflow to right
+        // i() - 1 is the exact position of the boundary and we need to make it equal to i() -2
+        // i() never appears in the simulation
          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.u(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
          field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
          field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j()-1);
