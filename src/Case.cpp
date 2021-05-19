@@ -281,7 +281,8 @@ void Case::simulate() {
         /*****
          Console logging
         ******/
-         std::cout << "Simulating step = " << timestep << ", time t = " << t << ", pressure solver res = " << res << ", CourantNum = "<< CourantNum << "\n";
+         std::cout << "Simulating step = " << timestep << ", time t = " << t;
+         std::cout << ", pressure solver res = " << res << ", CourantNum = "<< CourantNum << " , T_center = "<< _field.T(_grid.imax()/2,_grid.jmax()/2)<< "\n";
          // " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
         
         /*****
