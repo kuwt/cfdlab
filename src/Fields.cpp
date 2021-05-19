@@ -4,13 +4,12 @@
 #include <iostream>
 
 // Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI)
     : _nu(nu), _dt(dt), _tau(tau) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
     _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    // _T = Matrix<double>(imax + 2, jmax + 2, TI);
-
+    _T = Matrix<double>(imax + 2, jmax + 2, TI);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -201,3 +200,5 @@ double &Fields::rs(int i, int j) { return _RS(i, j); }
 Matrix<double> &Fields::p_matrix() { return _P; } 
 
 double Fields::dt() const { return _dt; }
+
+double &Fields::T(int i, int j) { return _T(i, j); }

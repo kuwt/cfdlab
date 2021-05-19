@@ -23,9 +23,9 @@ class Fields {
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
-     *
+     * @param[in] initial temperature
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -80,6 +80,9 @@ class Fields {
     /// y-momentum flux index based access and modify
     double &g(int i, int j);
 
+    /// temperature index based access and modify
+    double &T(int i, int j);
+
     /// get timestep size
     double dt() const;
 
@@ -93,12 +96,16 @@ class Fields {
     Matrix<double> _V;
     /// pressure matrix
     Matrix<double> _P;
+
     /// x-momentum flux matrix
     Matrix<double> _F;
     /// y-momentum flux matrix
     Matrix<double> _G;
     /// right hand side matrix
     Matrix<double> _RS;
+
+    /// temperature matrix
+    Matrix<double> _T;
 
     /// kinematic viscosity
     double _nu;
