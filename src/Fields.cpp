@@ -59,10 +59,13 @@ void Fields::calculate_fluxes(Grid &grid) {
         convective_term = Discretization::convection_u(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_U, i, j);           
         _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
-    
+        
+        _F(i, j) += -0.5 * _beta * _dt * _gx * (_T(i,j)+_T(i+1,j)); // temperature term
         convective_term = Discretization::convection_v(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_V, i, j);            
         _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
+
+        _G(i, j) +=  -0.5 * _beta * _dt * _gy * (_T(i,j)+_T(i,j+1));// temperature term
     }
 
 
