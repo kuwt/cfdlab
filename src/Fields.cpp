@@ -16,6 +16,23 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
+void Fields::calculate_temperature(Grid &grid)
+{
+    Matrix<double> _TNext = _T;
+    double diffusion_term, convective_term;
+    double alpha = _nu/_Pr; //thermal diffusivity
+    for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+
+        convective_term = Discretization::convection_T(_T,_U, _V, i, j);
+        diffusion_term = Discretization::diffusion(_T, i, j);           
+        
+        _TNext(i, j) = _T(i, j) + _dt * ( alpha * diffusion_term - convective_term);
+    }
+    _T = _TNext;
+}
+
 // need to use the grid information more extensively by using for each cell, checking if the cell is a fluid or not
 void Fields::calculate_fluxes(Grid &grid) {
     /* NOTE:
@@ -189,6 +206,7 @@ double Fields::calculate_dt(Grid &grid) {
 
     return _dt; 
 }
+
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }

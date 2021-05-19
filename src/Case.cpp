@@ -239,6 +239,7 @@ void Case::simulate() {
         /*****
          update field
         ******/
+        _field.calculate_temperature(_grid);
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
 
