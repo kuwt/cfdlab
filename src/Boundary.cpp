@@ -5,17 +5,25 @@
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : _cells(cells) {} 
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
-    : _cells(cells), _wall_temperature(wall_temperature) {} //TODO: todo later, currently no temperature
+    : _cells(cells), _wall_temperature(wall_temperature) {} 
 
 void FixedWallBoundary::apply(Fields &field) {
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
+        double walltemperature = 0;
+        if (_wall_temperature.find(_cells[cell_iter]->wall_id()) != _wall_temperature.end())
+        {
+            walltemperature = _wall_temperature[_cells[cell_iter]->wall_id()];
+        }
+        
         if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_NE cells
         {
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
           field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
           field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
+
+          //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
         }
         else if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_NW cells
         {
@@ -23,6 +31,8 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
+
+           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
         }
         else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_SE cells
         {
@@ -31,6 +41,7 @@ void FixedWallBoundary::apply(Fields &field) {
           field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
 
+           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
         }
         else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_SW cells
         {
@@ -39,30 +50,39 @@ void FixedWallBoundary::apply(Fields &field) {
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
 
+           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
         }
         else if (_cells[cell_iter]->is_border(border_position::RIGHT) ) // B_E cells
         {
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
+
+          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());;
         }
         else if (_cells[cell_iter]->is_border(border_position::LEFT) ) // B_W cells
         {
           field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
+
+          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());;
         }
         else if (_cells[cell_iter]->is_border(border_position::TOP) )  // B_N cells
         {
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
           field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
+
+          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);;
         }
         else if (_cells[cell_iter]->is_border(border_position::BOTTOM) )  // B_S cells
         {
           field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
           field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
           field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
+
+          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);;
         }
           
     }
@@ -74,10 +94,12 @@ MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_ve
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_velocity,
                                        std::map<int, double> wall_temperature)
-    : _cells(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}//TODO: todo later, currently no temperature
+    : _cells(cells), _wall_velocity(wall_velocity), _wall_temperature(wall_temperature) {}
 
 void MovingWallBoundary::apply(Fields &field) {
-    
+    /*********
+     *  Important warning! Currently only works for Lid Driven Cavity Case
+     * *******/
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
         if (_cells[cell_iter]->is_border(border_position::BOTTOM) ) // top wall
@@ -92,6 +114,11 @@ InFlowBoundary::InFlowBoundary(std::vector<Cell *> cells, double inflow_velocity
     : _cells(cells), _inflow_velocity_x(inflow_velocity_x), _inflow_velocity_y(inflow_velocity_y) {}
 
 void InFlowBoundary::apply(Fields &field) {
+      /*********
+     *  Important warning! Currently only works When inflow is at the left
+     *  No temperature effect is considered here too.
+     * *******/
+
     // Dirichlet BC for inflow
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
@@ -107,6 +134,11 @@ OutFlowBoundary::OutFlowBoundary(std::vector<Cell *> cells)
     : _cells(cells){}
 
 void OutFlowBoundary::apply(Fields &field) {
+       /*********
+     *  Important warning! Currently only works When outflow is at the right
+     * No temperature effect is considered here too.
+     * *******/
+
     // Neumann BC for outflow(free-outflow)
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
