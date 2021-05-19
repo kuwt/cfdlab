@@ -10,79 +10,75 @@ FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, do
 void FixedWallBoundary::apply(Fields &field) {
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
+        auto pcell = _cells[cell_iter];
+        int i = pcell->i();
+        int j = pcell->j();
+
         double walltemperature = 0;
-        if (_wall_temperature.find(_cells[cell_iter]->wall_id()) != _wall_temperature.end())
+        if (_wall_temperature.find(pcell->wall_id()) != _wall_temperature.end())
         {
-            walltemperature = _wall_temperature[_cells[cell_iter]->wall_id()];
+            walltemperature = _wall_temperature[pcell->wall_id()];
         }
-        
-        if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_NE cells
-        {
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
-          field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
 
-          //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
+        if (pcell->is_border(border_position::TOP) && pcell->is_border(border_position::RIGHT) )  // B_NE cells
+        {
+          field.u(i,j) = 0;
+          field.v(i,j) = 0;
+          field.u(i-1,j) = -field.u(i-1,j+1);
+          field.v(i-1,j) = -field.v(i+1,j-1);
+          field.T(i,j) = (field.T(i+1, j) + field.T(i, j+1)) / 2;
         }
-        else if (_cells[cell_iter]->is_border(border_position::TOP) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_NW cells
+        else if (pcell->is_border(border_position::TOP) && pcell->is_border(border_position::LEFT) )  // B_NW cells
         {
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
-
-           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
+          field.v(i,j) = 0;
+          field.u(i-1,j) = 0;
+          field.u(i,j) = -field.u(i,j+1);
+          field.v(i,j-1) = -field.v(i-1,j-1);
+          field.T(i,j) =(field.T(i-1, j) + field.T(i, j+1)) / 2;
         }
-        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::RIGHT) )  // B_SE cells
+        else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::RIGHT) )  // B_SE cells
         {
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
-
-           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
+          field.u(i,j) = 0;
+          field.v(i,j-1) = 0;
+          field.u(i-1,j) = -field.u(i-1,j-1);
+          field.v(i,j) = -field.v(i+1,j);
+          field.T(i,j) = (field.T(i+1, j) + field.T(i, j-1)) / 2;
         }
-        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) && _cells[cell_iter]->is_border(border_position::LEFT) )  // B_SW cells
+        else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::LEFT) )  // B_SW cells
         {
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
-
-           //field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = ?
+          field.u(i-1,j) = 0;
+          field.v(i,j-1) = 0;
+          field.u(i,j) = -field.u(i,j-1);
+          field.v(i,j) = -field.v(i-1,j);
+          field.T(i,j) =(field.T(i-1, j) + field.T(i, j-1)) / 2;
         }
-        else if (_cells[cell_iter]->is_border(border_position::RIGHT) ) // B_E cells
+        else if (pcell->is_border(border_position::RIGHT) ) // B_E cells
         {
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
-
-          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());;
+          field.u(i,j) = 0;
+          field.v(i,j) = -field.v(i+1,j);
+          field.v(i,j-1) = -field.v(i+1,j-1);
+          field.T(i,j) = 2*walltemperature-field.T(i+1,j);;
         }
-        else if (_cells[cell_iter]->is_border(border_position::LEFT) ) // B_W cells
+        else if (pcell->is_border(border_position::LEFT) ) // B_W cells
         {
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = 0;
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());
-
-          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i()-1,_cells[cell_iter]->j());;
+          field.u(i-1,j) = 0;
+          field.v(i,j-1) = -field.v(i-1,j-1);
+          field.v(i,j) = -field.v(i-1,j);
+          field.T(i,j) = 2*walltemperature-field.T(i-1,j);
         }
-        else if (_cells[cell_iter]->is_border(border_position::TOP) )  // B_N cells
+        else if (pcell->is_border(border_position::TOP) )  // B_N cells
         {
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 0;
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()+1);
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);
-
-          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()+1);;
+          field.v(i,j) = 0;
+          field.u(i-1,j) = -field.u(i-1,j+1);
+          field.u(i,j) = -field.u(i,j+1);
+          field.T(i,j) = 2*walltemperature-field.T(i,j+1);;
         }
-        else if (_cells[cell_iter]->is_border(border_position::BOTTOM) )  // B_S cells
+        else if (pcell->is_border(border_position::BOTTOM) )  // B_S cells
         {
-          field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0;
-          field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
-          field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = -field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1);
-
-          field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*walltemperature-field.T(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);;
+          field.v(i,j-1) = 0;
+          field.u(i,j) = -field.u(i,j-1);
+          field.u(i-1,j) = -field.u(i-1,j-1);
+          field.T(i,j) = 2*walltemperature-field.T(i,j-1);;
         }
           
     }
@@ -102,10 +98,14 @@ void MovingWallBoundary::apply(Fields &field) {
      * *******/
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
-        if (_cells[cell_iter]->is_border(border_position::BOTTOM) ) // top wall
+        auto pcell = _cells[cell_iter];
+        int i = pcell->i();
+        int j = pcell->j();
+
+        if (pcell->is_border(border_position::BOTTOM) ) // top wall
         {
-            field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 0; //the minus 1 is to account the fact the the top border is just the top ghost border
-            field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] -field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1);
+            field.v(i,j-1) = 0; //the minus 1 is to account the fact the the top border is just the top ghost border
+            field.u(i,j) = 2*_wall_velocity[LidDrivenCavity::moving_wall_id] -field.u(i,j-1);
         }
     }
 }
@@ -122,10 +122,14 @@ void InFlowBoundary::apply(Fields &field) {
     // Dirichlet BC for inflow
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
+        auto pcell = _cells[cell_iter];
+        int i = pcell->i();
+        int j = pcell->j();
+
         // assume inflow from left
-        field.u(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = _inflow_velocity_x; 
-        field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j());
-        field.v(_cells[cell_iter]->i(),_cells[cell_iter]->j()-1) = 2 * _inflow_velocity_y - field.v(_cells[cell_iter]->i()+1,_cells[cell_iter]->j()-1);
+        field.u(i,j) = _inflow_velocity_x; 
+        field.v(i,j) = 2 * _inflow_velocity_y - field.v(i+1,j);
+        field.v(i,j-1) = 2 * _inflow_velocity_y - field.v(i+1,j-1);
     }
 }
 
@@ -142,12 +146,16 @@ void OutFlowBoundary::apply(Fields &field) {
     // Neumann BC for outflow(free-outflow)
     for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter)
     {
+        auto pcell = _cells[cell_iter];
+        int i = pcell->i();
+        int j = pcell->j();
+
         // assume outflow to right
         // i() - 1 is the exact position of the boundary and we need to make it equal to i() -2
         // i() never appears in the simulation
-         field.u(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.u(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
-         field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j());
-         field.v(_cells[cell_iter]->i()-1,_cells[cell_iter]->j()-1) = field.v(_cells[cell_iter]->i()-2,_cells[cell_iter]->j()-1);
+         field.u(i-1,j) = field.u(i-2,j);
+         field.v(i-1,j) = field.v(i-2,j);
+         field.v(i-1,j-1) = field.v(i-2,j-1);
     }
 
 }
