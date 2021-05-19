@@ -46,6 +46,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     int wallnum;     /* wall num */
     std::map<int, double> wall_vel;  /* wall velocities */
 
+    double TI;       /* initial temperature */
+    double Pr;       /* Prandtl number (Pr = nu / alpha)*/
+    double beta;     /* thermal expansion coefficient*/
+
     wallnum = 0;     /* init wall num to zero for easier file reading*/
     geom_name = _geom_name;
     if (file.is_open()) {
@@ -77,6 +81,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "geo_file") file >> geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
+                if (var == "TI") file >> TI;
+                if (var == "alpha") {file >> Pr; Pr /= nu;}
+                if (var == "beta") file >> beta;
                 if (var == "num_of_walls") file >> wallnum;
                 for (int i = 0; i < wallnum; ++i){
                     int wallIdx = i + 3;
@@ -329,6 +336,10 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
+    // Temperature Array
+    vtkDoubleArray *Temperature = vtkDoubleArray::New();
+    Velocity->SetName("temperature");
+    Velocity->SetNumberOfComponents(1);
 
     // Pressure Array
     vtkDoubleArray *Geometry = vtkDoubleArray::New();
@@ -340,6 +351,10 @@ void Case::output_vtk(int timestep, int my_rank) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
+
+            double temperature = _field.T(i,j);
+            Temperature->InsertNextTuple(&temperature);
+
         }
     }
 

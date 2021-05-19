@@ -110,4 +110,9 @@ class Fields {
     double _dt;
     /// adaptive timestep coefficient
     double _tau;
+    /// Prandtl number
+    double _Pr;
+    /// thermal expansion coefficient
+    double _beta;
+
 };

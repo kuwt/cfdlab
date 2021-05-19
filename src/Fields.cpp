@@ -9,6 +9,8 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
     _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
+    // _T = Matrix<double>(imax + 2, jmax + 2, TI);
+
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
@@ -112,7 +114,7 @@ void Fields::calculate_fluxes(Grid &grid) {
         _G(i, j-1) = _V(i, j-1);
     }
 
-} //TODO: //DONE
+}
 
 void Fields::calculate_rs(Grid &grid) {
     // Equation(11)
@@ -183,9 +185,11 @@ double Fields::calculate_dt(Grid &grid) {
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
     _dt = _tau * std::min( {dx/abs(umax), 
                             dy/abs(vmax), 
-                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu)});
+                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu),
+                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*_Pr)});
+
     return _dt; 
-} //TODO i,j range not sure
+}
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
