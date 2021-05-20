@@ -26,7 +26,7 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j) = 0;
           field.u(i-1,j) = -field.u(i-1,j+1);
           field.v(i-1,j) = -field.v(i+1,j-1);
-          field.T(i,j) = (field.T(i+1, j) + field.T(i, j+1)) / 2;
+          field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j+1)) / 2;
         }
         else if (pcell->is_border(border_position::TOP) && pcell->is_border(border_position::LEFT) )  // B_NW cells
         {
@@ -34,7 +34,7 @@ void FixedWallBoundary::apply(Fields &field) {
           field.u(i-1,j) = 0;
           field.u(i,j) = -field.u(i,j+1);
           field.v(i,j-1) = -field.v(i-1,j-1);
-          field.T(i,j) =(field.T(i-1, j) + field.T(i, j+1)) / 2;
+          field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j+1)) / 2;
         }
         else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::RIGHT) )  // B_SE cells
         {
@@ -42,7 +42,7 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j-1) = 0;
           field.u(i-1,j) = -field.u(i-1,j-1);
           field.v(i,j) = -field.v(i+1,j);
-          field.T(i,j) = (field.T(i+1, j) + field.T(i, j-1)) / 2;
+          field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j-1)) / 2;
         }
         else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::LEFT) )  // B_SW cells
         {
@@ -50,14 +50,14 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j-1) = 0;
           field.u(i,j) = -field.u(i,j-1);
           field.v(i,j) = -field.v(i-1,j);
-          field.T(i,j) =(field.T(i-1, j) + field.T(i, j-1)) / 2;
+          field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j-1)) / 2;
         }
         else if (pcell->is_border(border_position::RIGHT) ) // B_E cells
         {
           field.u(i,j) = 0;
           field.v(i,j) = -field.v(i+1,j);
           field.v(i,j-1) = -field.v(i+1,j-1);
-          field.T(i,j) = 2*walltemperature-field.T(i+1,j);;
+          field.T(i,j) = 2 * walltemperature-field.T(i+1,j);;
         }
         else if (pcell->is_border(border_position::LEFT) ) // B_W cells
         {
