@@ -109,11 +109,23 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     file.close();
 
+    // Parameter safety check
+    const double zeroEpilon = 1e-05;
+    if (Pr < zeroEpilon)
+    {
+        char buffer[1024];
+        snprintf(buffer, 1024, "Pr number = %f invalid.Reset to 1.0\n",Pr);
+        std::cerr << buffer;
+        Pr = 1.0;
+    }
+   
+
     _geom_name = geom_name;
     std::cout << "geom_name = " << geom_name << "\n";
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
+   
     // Check if need energy equation
     if (energy_eq.compare("on") == 0) {
         energy_on = true;
@@ -131,7 +143,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, energy_on, TI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI,energy_on, TI,  Pr);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);

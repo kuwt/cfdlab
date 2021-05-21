@@ -4,8 +4,9 @@
 #include <iostream>
 
 // Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, bool energy_on, double TI=0.0)
-    : _nu(nu), _dt(dt), _tau(tau) {
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, 
+bool energy_on = false, double TI=0.0, double Pr = 1.0)
+    : _nu(nu), _dt(dt), _tau(tau), _energy_on(energy_on),_Pr(Pr)  {
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
     _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
@@ -14,7 +15,6 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _energy_on = energy_on;
 }
 
 void Fields::calculate_temperature(Grid &grid)
