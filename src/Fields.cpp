@@ -4,7 +4,7 @@
 #include <iostream>
 
 // Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double TI)
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, bool energy_on, double TI=0.0)
     : _nu(nu), _dt(dt), _tau(tau) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
     _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
@@ -14,6 +14,7 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _energy_on = energy_on;
 }
 
 void Fields::calculate_temperature(Grid &grid)
@@ -49,7 +50,6 @@ void Fields::calculate_fluxes(Grid &grid) {
     //[0,1,...imax, imax+1][0,1,...,jmax,jmax+1]
     
     // calculate for fluid_cells(inner cells)
-    // NOTE: ranges of i, j for _F,_G are different
     // implementation of ws1 equation (9)
     // implementation of ws1 equation (10)
     for (auto fluid_cell : grid.fluid_cells()){

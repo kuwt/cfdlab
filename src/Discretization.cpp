@@ -23,6 +23,7 @@ double Discretization::convection_u(const Matrix<double> &U, const Matrix<double
                              (V(i,j-1)+V(i+1,j-1)) * (U(i,j-1)+U(i,j)) / 4) + \
                    _gamma / _dy * ( fabs(V(i,j)+V(i+1,j)) * (U(i,j)-U(i,j+1)) / 4 - \
                                     fabs(V(i,j-1)+V(i+1,j-1)) * (U(i,j-1)-U(i,j)) / 4);
+
     return du2dx + duvdy;          
 }
 
