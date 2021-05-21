@@ -353,8 +353,8 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Temperature Array
     vtkDoubleArray *Temperature = vtkDoubleArray::New();
-    Velocity->SetName("temperature");
-    Velocity->SetNumberOfComponents(1);
+    Temperature->SetName("temperature");
+    Temperature->SetNumberOfComponents(1);
 
     // Geometry Array
     vtkDoubleArray *Geometry = vtkDoubleArray::New();
