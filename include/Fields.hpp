@@ -23,9 +23,15 @@ class Fields {
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
+     * @param[in] is use energy equation
      * @param[in] initial temperature
+     * @param[in] Prantl number
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, bool energy_on, double TI);
+    Fields(double _nu, double _dt, double _tau, 
+          int imax, int jmax, 
+          double UI, double VI, double PI, 
+          double Gx, double Gy, 
+          bool energy_on, double TI, double PR, double beta);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y

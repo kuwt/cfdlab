@@ -2,6 +2,9 @@
 #include <cmath>
 #include <iostream>
 
+static const double zeroEpilon = 1e-05;
+  
+    
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells) : _cells(cells) {} 
 
 FixedWallBoundary::FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature)
@@ -26,15 +29,33 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j) = 0;
           field.u(i-1,j) = -field.u(i-1,j+1);
           field.v(i-1,j) = -field.v(i+1,j-1);
-          field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j+1)) / 2;
+
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = (field.T(i+1,j) + field.T(i,j+1)) /2 ;
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j+1)) / 2;
+          }
         }
+
         else if (pcell->is_border(border_position::TOP) && pcell->is_border(border_position::LEFT) )  // B_NW cells
         {
           field.v(i,j) = 0;
           field.u(i-1,j) = 0;
           field.u(i,j) = -field.u(i,j+1);
           field.v(i,j-1) = -field.v(i-1,j-1);
-          field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j+1)) / 2;
+
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = (field.T(i-1,j) + field.T(i,j+1)) /2 ;
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j+1)) / 2;
+          }
+          
         }
         else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::RIGHT) )  // B_SE cells
         {
@@ -42,7 +63,15 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j-1) = 0;
           field.u(i-1,j) = -field.u(i-1,j-1);
           field.v(i,j) = -field.v(i+1,j);
-          field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j-1)) / 2;
+          
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = (field.T(i+1,j) + field.T(i,j-1)) /2 ;
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature - (field.T(i+1, j) + field.T(i, j-1)) / 2;
+          }
         }
         else if (pcell->is_border(border_position::BOTTOM) && pcell->is_border(border_position::LEFT) )  // B_SW cells
         {
@@ -50,37 +79,77 @@ void FixedWallBoundary::apply(Fields &field) {
           field.v(i,j-1) = 0;
           field.u(i,j) = -field.u(i,j-1);
           field.v(i,j) = -field.v(i-1,j);
-          field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j-1)) / 2;
+         
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = (field.T(i-1,j) + field.T(i,j-1)) /2 ;
+          }
+          else
+          { //Dirichlet
+             field.T(i,j) = 2 * walltemperature - (field.T(i-1, j) + field.T(i, j-1)) / 2;
+          }
         }
         else if (pcell->is_border(border_position::RIGHT) ) // B_E cells
         {
           field.u(i,j) = 0;
           field.v(i,j) = -field.v(i+1,j);
           field.v(i,j-1) = -field.v(i+1,j-1);
-          field.T(i,j) = 2 * walltemperature-field.T(i+1,j);;
+          
+           if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = field.T(i+1,j);
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature-field.T(i+1,j);
+          }
         }
         else if (pcell->is_border(border_position::LEFT) ) // B_W cells
         {
           field.u(i-1,j) = 0;
           field.v(i,j-1) = -field.v(i-1,j-1);
           field.v(i,j) = -field.v(i-1,j);
-          field.T(i,j) = 2*walltemperature-field.T(i-1,j);
+
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = field.T(i-1,j);
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature-field.T(i-1,j);
+          }
         }
         else if (pcell->is_border(border_position::TOP) )  // B_N cells
         {
           field.v(i,j) = 0;
           field.u(i-1,j) = -field.u(i-1,j+1);
           field.u(i,j) = -field.u(i,j+1);
-          field.T(i,j) = 2*walltemperature-field.T(i,j+1);;
+
+          if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = field.T(i,j+1);
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature-field.T(i,j+1);
+          }
+
         }
         else if (pcell->is_border(border_position::BOTTOM) )  // B_S cells
         {
           field.v(i,j-1) = 0;
           field.u(i,j) = -field.u(i,j-1);
           field.u(i-1,j) = -field.u(i-1,j-1);
-          field.T(i,j) = 2*walltemperature-field.T(i,j-1);;
+
+           if (walltemperature < (-1 + zeroEpilon))
+          { //Neumann adiabatic
+            field.T(i,j) = field.T(i,j-1);
+          }
+          else
+          { //Dirichlet
+            field.T(i,j) = 2 * walltemperature-field.T(i,j-1);
+          }
         }
-          
     }
 }
 

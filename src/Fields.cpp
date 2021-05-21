@@ -4,9 +4,9 @@
 #include <iostream>
 
 // Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, 
-bool energy_on = false, double TI=0.0, double Pr = 1.0)
-    : _nu(nu), _dt(dt), _tau(tau), _energy_on(energy_on),_Pr(Pr)  {
+Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double GX, double GY, 
+bool energy_on = false, double TI=0.0, double Pr = 1.0, double beta = 0.1)
+    : _nu(nu), _dt(dt), _tau(tau),_gx(GX),_gy(GY), _energy_on(energy_on), _Pr(Pr), _beta(beta) {
     _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
     _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
     _P = Matrix<double>(imax + 2, jmax + 2, PI);
@@ -58,14 +58,11 @@ void Fields::calculate_fluxes(Grid &grid) {
 
         convective_term = Discretization::convection_u(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_U, i, j);           
-        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
+        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gx * (_T(i,j)+_T(i+1,j));
         
-        _F(i, j) += -0.5 * _beta * _dt * _gx * (_T(i,j)+_T(i+1,j)); // temperature term
         convective_term = Discretization::convection_v(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_V, i, j);            
-        _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
-
-        _G(i, j) +=  -0.5 * _beta * _dt * _gy * (_T(i,j)+_T(i,j+1));// temperature term
+        _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gy * (_T(i,j)+_T(i,j+1));
     }
 
 
@@ -202,10 +199,11 @@ double Fields::calculate_dt(Grid &grid) {
     // vmax = * std::max_element(_V.data(), _U.data()+_V.size());
 
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
+    double alpha = _nu/_Pr;
     _dt = _tau * std::min( {dx/abs(umax), 
                             dy/abs(vmax), 
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu),
-                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*_Pr)});
+                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*alpha)});
 
     return _dt; 
 }

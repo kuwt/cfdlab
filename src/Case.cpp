@@ -19,6 +19,8 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
+#define IS_DETAIL_LOG (0)
+
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
@@ -87,8 +89,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "TI") file >> TI;
                 if (var == "Pr") file >> Pr;
+                if (var == "alpha")  {file >> Pr; Pr = nu/Pr;} //read in alpha, convert to Pr
                 if (var == "beta") file >> beta;
-                if (var == "num_of_walls") file >> wallnum;
+                if (var == "num_of_walls" || var == "num_walls") file >> wallnum;
                 for (int i = 0; i < wallnum; ++i){
                     int wallIdx = i + 3;
                     std::string str = "wall_vel_" + std::to_string(wallIdx);
@@ -143,9 +146,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI,energy_on, TI,  Pr);
-
-    _discretization = Discretization(domain.dx, domain.dy, gamma);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, GX, GY, energy_on, TI, Pr, beta);
+  
+   _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
@@ -305,10 +308,21 @@ void Case::simulate() {
         /*****
          Console logging
         ******/
-         std::cout << "Simulating step = " << timestep << ", time t = " << t;
-         std::cout << ", pressure solver res = " << res << ", CourantNum = "<< CourantNum << " , T_center = "<< _field.T(_grid.imax()/2,_grid.jmax()/2)<< "\n";
-         // " , u at (25,25) = "<< _field.u(25,25)<< " , rs at (25,25) = "<< _field.rs(25,25)<<"\n";
-        
+        {
+            char buffer[1024];
+            snprintf(buffer,1024,"step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", 
+            timestep, t,res,CourantNum);
+            std::cout << buffer;
+#if IS_DETAIL_LOG
+            snprintf(buffer,1024,"T_l = %.3e, U_l = %.3e, V_l = %.3e, p_l = %.3e\n", 
+            _field.T(2,_grid.jmax()/2),
+            _field.u(2,_grid.jmax()/2),  _field.v(2,_grid.jmax()/2),
+             _field.p(2,_grid.jmax()/2)
+            );
+            std::cout << buffer;
+#endif
+        }
+
         /*****
          Compute time step for next iteration
         ******/
@@ -418,6 +432,45 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Add Temperature to Structured Grid
     structuredGrid->GetCellData()->AddArray(Temperature);
+
+    #if IS_DETAIL_LOG
+        // F Array
+        vtkDoubleArray *farray = vtkDoubleArray::New();
+        farray->SetName("F");
+        farray->SetNumberOfComponents(1);
+
+        // G Array
+        vtkDoubleArray *garray = vtkDoubleArray::New();
+        garray->SetName("G");
+        garray->SetNumberOfComponents(1);
+
+          // rs Array
+        vtkDoubleArray *rsarray = vtkDoubleArray::New();
+       rsarray->SetName("rs");
+        rsarray->SetNumberOfComponents(1);
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double f = _field.f(i, j);
+                farray->InsertNextTuple(&f);
+
+                double g = _field.g(i,j);
+                garray->InsertNextTuple(&g);
+
+            }
+        }
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double rs = _field.rs(i, j);
+                rsarray->InsertNextTuple(&rs);
+            }
+        }
+        structuredGrid->GetCellData()->AddArray(farray);
+        structuredGrid->GetCellData()->AddArray(garray);
+        structuredGrid->GetCellData()->AddArray(rsarray);
+    #endif
+
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
