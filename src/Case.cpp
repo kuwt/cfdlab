@@ -46,9 +46,12 @@ Case::Case(std::string file_name, int argn, char **args) {
     int wallnum;     /* wall num */
     std::map<int, double> wall_vel;  /* wall velocities */
 
+    bool energy_on = false;
+    std::string energy_eq = "off";
     double TI;       /* initial temperature */
-    double Pr;       /* Prandtl number (Pr = nu / alpha)*/
+    double Pr;       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
     double beta;     /* thermal expansion coefficient*/
+    std::map<int, double> wall_temp;  /* wall temperatures */
 
     wallnum = 0;     /* init wall num to zero for easier file reading*/
     geom_name = _geom_name;
@@ -81,17 +84,24 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "geo_file") file >> geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
+                if (var == "energy_eq") file >> energy_eq;
                 if (var == "TI") file >> TI;
-                if (var == "alpha") {file >> Pr; Pr /= nu;}
+                if (var == "Pr") file >> Pr;
                 if (var == "beta") file >> beta;
                 if (var == "num_of_walls") file >> wallnum;
                 for (int i = 0; i < wallnum; ++i){
                     int wallIdx = i + 3;
                     std::string str = "wall_vel_" + std::to_string(wallIdx);
+                    std::string temp_str = "wall_temp_" + std::to_string(wallIdx);
                     if (var == str) {
                         double tmpVelocity = 0.;
                         file >> tmpVelocity;
                         wall_vel.insert(std::pair<int, double>(wallIdx, tmpVelocity));
+                    }
+                    if (var == temp_str) {
+                        double tmpTemperature = 0.;
+                        file >> tmpTemperature;
+                        wall_temp.insert(std::pair<int, double>(wallIdx, tmpTemperature));
                     }
                 }
             }
@@ -104,7 +114,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
- 
+    // Check if need energy equation
+    if (energy_eq.compare("on") == 0) {
+        energy_on = true;
+    }
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
@@ -118,7 +131,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    _field = Fields(nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, energy_on, TI);
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
@@ -136,10 +149,9 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     else{ 
-        //to do: add boundaries, movingWall, FixedWall, inflow, outflow ...
         
         if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(),wall_temp));
         }
         
         if (not _grid.inflow_cells().empty()) {
@@ -336,12 +348,13 @@ void Case::output_vtk(int timestep, int my_rank) {
     vtkDoubleArray *Velocity = vtkDoubleArray::New();
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
+
     // Temperature Array
     vtkDoubleArray *Temperature = vtkDoubleArray::New();
     Velocity->SetName("temperature");
     Velocity->SetNumberOfComponents(1);
 
-    // Pressure Array
+    // Geometry Array
     vtkDoubleArray *Geometry = vtkDoubleArray::New();
     Geometry->SetName("geometry");
     Geometry->SetNumberOfComponents(1);
@@ -389,6 +402,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Add Geometry to Structured Grid
     structuredGrid->GetCellData()->AddArray(Geometry);
 
+    // Add Temperature to Structured Grid
+    structuredGrid->GetCellData()->AddArray(Temperature);
+
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
 
@@ -404,7 +420,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.imin = 0;
     domain.jmin = 0;
-    domain.imax = imax_domain + 2; //NOTE: build domain with ghost cells
+    domain.imax = imax_domain + 2;
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;

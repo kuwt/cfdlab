@@ -25,7 +25,7 @@ class Fields {
      * @param[in] initial pressure
      * @param[in] initial temperature
      */
-    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double TI = 0);
+    Fields(double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, bool energy_on, double TI);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -121,5 +121,7 @@ class Fields {
     double _Pr;
     /// thermal expansion coefficient
     double _beta;
+    /// indicate whether apply temperature or not
+    bool _energy_on;
 
 };
