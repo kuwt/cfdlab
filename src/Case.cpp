@@ -89,7 +89,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "TI") file >> TI;
                 if (var == "Pr") file >> Pr;
-                //if (var == "alpha")  {file >> Pr; Pr = nu/Pr;} //read in alpha, convert to Pr
+                if (var == "alpha")  {file >> Pr; Pr = nu/Pr;} //read in alpha, convert to Pr
                 if (var == "beta") file >> beta;
                 if (var == "num_of_walls" || var == "num_walls") file >> wallnum;
                 for (int i = 0; i < wallnum; ++i){
