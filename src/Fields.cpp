@@ -205,21 +205,15 @@ double Fields::calculate_dt(Grid &grid) {
     int imax = grid.imax();
     int jmax = grid.jmax();
 
+   
     // finding umax in the domain
-    for (int i = 0; i <= imax; ++i){
-        for (int j = 0; j<= jmax; ++j){
-            umax = abs( _U(i, j)) > umax ? abs( _U(i,j)) : umax;
-        }
-    }
-
     // finding vmax in the domain
-    for (int i = 0; i <= imax; ++i){
-        for (int j = 0; j<= jmax; ++j){
-            vmax =   abs(_V(i, j)) > vmax ? abs(_V(i,j)) : vmax;
-        }
-    } 
-    // umax = * std::max_element(_U.data(), _U.data()+_U.size());
-    // vmax = * std::max_element(_V.data(), _U.data()+_V.size());
+     for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+        umax = abs(_U(i, j)) > umax ? abs( _U(i,j)) : umax;
+        vmax = abs(_V(i, j)) > vmax ? abs(_V(i,j)) : vmax;
+    }
 
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
     if(_energy_on){
