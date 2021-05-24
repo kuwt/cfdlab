@@ -208,14 +208,14 @@ double Fields::calculate_dt(Grid &grid) {
     // finding umax in the domain
     for (int i = 0; i <= imax; ++i){
         for (int j = 0; j<= jmax; ++j){
-            umax =  _U(i, j) > umax ? _U(i,j) : umax;
+            umax = abs( _U(i, j)) > umax ? abs( _U(i,j)) : umax;
         }
     }
 
     // finding vmax in the domain
     for (int i = 0; i <= imax; ++i){
         for (int j = 0; j<= jmax; ++j){
-            vmax =  _V(i, j) > vmax ? _V(i,j) : vmax;
+            vmax =   abs(_V(i, j)) > vmax ? abs(_V(i,j)) : vmax;
         }
     } 
     // umax = * std::max_element(_U.data(), _U.data()+_U.size());
@@ -224,14 +224,14 @@ double Fields::calculate_dt(Grid &grid) {
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
     if(_energy_on){
     double alpha = _nu/_Pr;
-    _dt = _tau * std::min( {dx/abs(umax), 
-                            dy/abs(vmax), 
+    _dt = _tau * std::min( {dx/umax, 
+                            dy/vmax, 
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu),
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*alpha)});
     }
     else{
-    _dt = _tau * std::min( {dx/abs(umax), 
-                            dy/abs(vmax), 
+    _dt = _tau * std::min( {dx/umax, 
+                            dy/vmax, 
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu)});
 
     }
