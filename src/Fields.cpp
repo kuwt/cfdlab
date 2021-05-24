@@ -4,17 +4,27 @@
 #include <iostream>
 
 // Temporarily no need to do anything for the initial velocity unless there is a non zero initial velocity config
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double GX, double GY, 
+Fields::Fields(const Grid &grid, double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double GX, double GY, 
 bool energy_on = false, double TI=0.0, double Pr = 1.0, double beta = 0.1)
     : _nu(nu), _dt(dt), _tau(tau),_gx(GX),_gy(GY), _energy_on(energy_on), _Pr(Pr), _beta(beta) {
-    _U = Matrix<double>(imax + 2, jmax + 2, UI); // NOTE: construct for the whole domain(including boundary)
-    _V = Matrix<double>(imax + 2, jmax + 2, VI); // NOTE: UI, VI, PI: initial condition
-    _P = Matrix<double>(imax + 2, jmax + 2, PI);
-    _T = Matrix<double>(imax + 2, jmax + 2, TI);
+    _U = Matrix<double>(imax + 2, jmax + 2, 0.0); // NOTE: construct for the whole domain(including boundary)
+    _V = Matrix<double>(imax + 2, jmax + 2, 0.0); // NOTE: UI, VI, PI: initial condition
+    _P = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _T = Matrix<double>(imax + 2, jmax + 2, 0.0);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    //init the fields only at fluid cells
+     for (auto fluid_cell : grid.fluid_cells()){
+        int i = fluid_cell->i();
+        int j = fluid_cell->j();
+        _U(i,j) = UI;
+        _V(i,j) = VI;
+        _P(i,j) = PI;
+        _T(i,j) = TI;
+     }
 }
 
 void Fields::calculate_temperature(Grid &grid)

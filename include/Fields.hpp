@@ -27,7 +27,7 @@ class Fields {
      * @param[in] initial temperature
      * @param[in] Prantl number
      */
-    Fields(double _nu, double _dt, double _tau, 
+    Fields(const Grid &grid, double _nu, double _dt, double _tau, 
           int imax, int jmax, 
           double UI, double VI, double PI, 
           double Gx, double Gy, 
