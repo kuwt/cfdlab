@@ -103,6 +103,9 @@ class Fields {
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
 
+    /// get _energy_on
+    bool energy_on();
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;

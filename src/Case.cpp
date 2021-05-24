@@ -166,7 +166,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     else{ 
         
         if (not _grid.fixed_wall_cells().empty()) {
-            _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(),wall_temp));
+            if(energy_on) _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(),wall_temp));
+            else _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
         
         if (not _grid.inflow_cells().empty()) {
@@ -392,10 +393,15 @@ void Case::output_vtk(int timestep, int my_rank) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
-
-            double temperature = _field.T(i,j);
-            Temperature->InsertNextTuple(&temperature);
-
+        }
+    }
+    if(_field.energy_on())
+    {
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double temperature = _field.T(i,j);
+                Temperature->InsertNextTuple(&temperature);
+            }
         }
     }
 
@@ -431,7 +437,9 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetCellData()->AddArray(Geometry);
 
     // Add Temperature to Structured Grid
-    structuredGrid->GetCellData()->AddArray(Temperature);
+    if(_field.energy_on()){
+        structuredGrid->GetCellData()->AddArray(Temperature);
+    }
 
     #if IS_DETAIL_LOG
         // F Array

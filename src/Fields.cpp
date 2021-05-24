@@ -19,19 +19,22 @@ bool energy_on = false, double TI=0.0, double Pr = 1.0, double beta = 0.1)
 
 void Fields::calculate_temperature(Grid &grid)
 {
-    Matrix<double> _TNext = _T;
-    double diffusion_term, convective_term;
-    double alpha = _nu/_Pr; //thermal diffusivity
-    for (auto fluid_cell : grid.fluid_cells()){
-        int i = fluid_cell->i();
-        int j = fluid_cell->j();
+    if(_energy_on)
+    {
+        Matrix<double> _TNext = _T;
+        double diffusion_term, convective_term;
+        double alpha = _nu/_Pr; //thermal diffusivity
+        for (auto fluid_cell : grid.fluid_cells()){
+            int i = fluid_cell->i();
+            int j = fluid_cell->j();
 
-        convective_term = Discretization::convection_T(_T,_U, _V, i, j);
-        diffusion_term = Discretization::diffusion(_T, i, j);           
-        
-        _TNext(i, j) = _T(i, j) + _dt * ( alpha * diffusion_term - convective_term);
+            convective_term = Discretization::convection_T(_T,_U, _V, i, j);
+            diffusion_term = Discretization::diffusion(_T, i, j);           
+            
+            _TNext(i, j) = _T(i, j) + _dt * ( alpha * diffusion_term - convective_term);
+        }
+        _T = _TNext;
     }
-    _T = _TNext;
 }
 
 // need to use the grid information more extensively by using for each cell, checking if the cell is a fluid or not
@@ -58,11 +61,21 @@ void Fields::calculate_fluxes(Grid &grid) {
 
         convective_term = Discretization::convection_u(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_U, i, j);           
-        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gx * (_T(i,j)+_T(i+1,j));
-        
+        if(_energy_on){
+            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gx * (_T(i,j)+_T(i+1,j));
+        }
+        else{
+            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
+        }
+
         convective_term = Discretization::convection_v(_U, _V, i, j);
-        diffusion_term = Discretization::diffusion(_V, i, j);            
-        _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gy * (_T(i,j)+_T(i,j+1));
+        diffusion_term = Discretization::diffusion(_V, i, j);
+        if(_energy_on){         
+            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term)-0.5 * _beta * _dt * _gy * (_T(i,j)+_T(i,j+1));
+        }
+        else{
+            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
+        }
     }
 
 
@@ -199,12 +212,19 @@ double Fields::calculate_dt(Grid &grid) {
     // vmax = * std::max_element(_V.data(), _U.data()+_V.size());
 
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all critieria.
+    if(_energy_on){
     double alpha = _nu/_Pr;
     _dt = _tau * std::min( {dx/abs(umax), 
                             dy/abs(vmax), 
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu),
                             1/(1/(dx*dx) + 1/(dy*dy)) /(2*alpha)});
+    }
+    else{
+    _dt = _tau * std::min( {dx/abs(umax), 
+                            dy/abs(vmax), 
+                            1/(1/(dx*dx) + 1/(dy*dy)) /(2*_nu)});
 
+    }
     return _dt; 
 }
 
@@ -221,3 +241,5 @@ Matrix<double> &Fields::p_matrix() { return _P; }
 double Fields::dt() const { return _dt; }
 
 double &Fields::T(int i, int j) { return _T(i, j); }
+
+bool Fields::energy_on(){ return _energy_on; }
