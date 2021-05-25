@@ -12,63 +12,57 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
 
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
 
-    
-    {   
-     // apply pressure boundary Neumann
-        std::vector<Cell*> boundaryCells;
-        boundaryCells.insert(boundaryCells.end(), grid.fixed_wall_cells().begin(),grid.fixed_wall_cells().end());
-        boundaryCells.insert(boundaryCells.end(), grid.inflow_cells().begin(), grid.inflow_cells().end() );
-        boundaryCells.insert(boundaryCells.end(), grid.moving_wall_cells().begin(), grid.moving_wall_cells().end() );
-        for (auto boundaryCell : boundaryCells)
-        {   
+    {
+        // apply pressure boundary Neumann
+        std::vector<Cell *> boundaryCells;
+        boundaryCells.insert(boundaryCells.end(), grid.fixed_wall_cells().begin(), grid.fixed_wall_cells().end());
+        boundaryCells.insert(boundaryCells.end(), grid.inflow_cells().begin(), grid.inflow_cells().end());
+        boundaryCells.insert(boundaryCells.end(), grid.moving_wall_cells().begin(), grid.moving_wall_cells().end());
+        for (auto boundaryCell : boundaryCells) {
             // for inflow boundary, we assume that it locates at left
             // for outflow boundary, we assume that it locates at right
             // for moving wall boundary, we assume that it locates at top
             int i = boundaryCell->i();
             int j = boundaryCell->j();
-            if (boundaryCell->is_border(border_position::TOP) && boundaryCell->is_border(border_position::RIGHT) )  // B_NE cells
+            if (boundaryCell->is_border(border_position::TOP) &&
+                boundaryCell->is_border(border_position::RIGHT)) // B_NE cells
             {
-                field.p(i, j) = (field.p(i+1, j) + field.p(i, j+1)) / 2;
+                field.p(i, j) = (field.p(i + 1, j) + field.p(i, j + 1)) / 2;
+            } else if (boundaryCell->is_border(border_position::TOP) &&
+                       boundaryCell->is_border(border_position::LEFT)) // B_NW cells
+            {
+                field.p(i, j) = (field.p(i - 1, j) + field.p(i, j + 1)) / 2;
+            } else if (boundaryCell->is_border(border_position::BOTTOM) &&
+                       boundaryCell->is_border(border_position::RIGHT)) // B_SE cells
+            {
+                field.p(i, j) = (field.p(i + 1, j) + field.p(i, j - 1)) / 2;
+            } else if (boundaryCell->is_border(border_position::BOTTOM) &&
+                       boundaryCell->is_border(border_position::LEFT)) // B_SW cells
+            {
+                field.p(i, j) = (field.p(i - 1, j) + field.p(i, j - 1)) / 2;
+            } else if (boundaryCell->is_border(border_position::RIGHT)) // B_E cells
+            {
+                field.p(i, j) = field.p(i + 1, j);
+            } else if (boundaryCell->is_border(border_position::LEFT)) // B_W cells
+            {
+                field.p(i, j) = field.p(i - 1, j);
+            } else if (boundaryCell->is_border(border_position::TOP)) // B_N cells
+            {
+                field.p(i, j) = field.p(i, j + 1);
+            } else if (boundaryCell->is_border(border_position::BOTTOM)) // B_S cells
+            {
+                field.p(i, j) = field.p(i, j - 1);
             }
-            else if (boundaryCell->is_border(border_position::TOP) && boundaryCell->is_border(border_position::LEFT) )  // B_NW cells
-            {
-                field.p(i, j) = (field.p(i-1, j) + field.p(i, j+1)) / 2;
-            }
-            else if (boundaryCell->is_border(border_position::BOTTOM) && boundaryCell->is_border(border_position::RIGHT) )  // B_SE cells
-            {
-                field.p(i, j) = (field.p(i+1, j) + field.p(i, j-1)) / 2;
-            }
-            else if (boundaryCell->is_border(border_position::BOTTOM) && boundaryCell->is_border(border_position::LEFT))  // B_SW cells
-            {
-                field.p(i, j) = (field.p(i-1, j) + field.p(i, j-1)) / 2;
-            } 
-            else if (boundaryCell->is_border(border_position::RIGHT) ) // B_E cells
-            {
-                field.p(i, j) = field.p(i+1, j);
-            }
-            else if (boundaryCell->is_border(border_position::LEFT) ) // B_W cells
-            {
-                field.p(i, j) = field.p(i-1, j);
-            }
-            else if (boundaryCell->is_border(border_position::TOP) )  // B_N cells
-            {
-                field.p(i, j) = field.p(i, j+1);
-            }
-            else if (boundaryCell->is_border(border_position::BOTTOM) )  // B_S cells
-            {
-                field.p(i, j) = field.p(i, j-1);
-            }
-            
         }
     }
 
-   {   
-     // apply pressure boundary diriclet, outflow boundary confines velocity gradient so it requires diriclet pressure boundary
-     // according to the forum and https://www.simscale.com/docs/simulation-setup/boundary-conditions/pressure-inlet-and-pressure-outlet/
-        std::vector<Cell*> boundaryCells;
-        boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end() );
-        for (auto boundaryCell : boundaryCells)
-        {   
+    {
+        // apply pressure boundary diriclet, outflow boundary confines velocity gradient so it requires diriclet
+        // pressure boundary according to the forum and
+        // https://www.simscale.com/docs/simulation-setup/boundary-conditions/pressure-inlet-and-pressure-outlet/
+        std::vector<Cell *> boundaryCells;
+        boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end());
+        for (auto boundaryCell : boundaryCells) {
             // for inflow boundary, we assume that it locates at left
             // for outflow boundary, we assume that it locates at right
             // for moving wall boundary, we assume that it locates at top
@@ -78,7 +72,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         }
     }
 
-      // update p according to stencil
+    // update p according to stencil
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
@@ -87,7 +81,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                         coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
 
-     // compute residual
+    // compute residual
     double res = 0.0;
     double rloc = 0.0;
 

@@ -42,7 +42,7 @@ void Grid::build_lid_driven_cavity() {
     assign_cell_types(geometry_data);
 }
 
-//to do, need to adapt to geometry
+// to do, need to adapt to geometry
 // have to do the  cell neighbour assigment for each cell
 void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
@@ -55,20 +55,20 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         }
         for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
             if (geometry_data.at(i_geom).at(j_geom) == 0) {
-                //fluid cells
+                // fluid cells
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 _fluid_cells.push_back(&_cells(i, j));
 
-                //moving wall cells-lid Driven Cavity
+                // moving wall cells-lid Driven Cavity
             } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
                 _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
                 _moving_wall_cells.push_back(&_cells(i, j));
-                //Fixed wall Cells-Lid Driven Cavity
+                // Fixed wall Cells-Lid Driven Cavity
             } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::fixed_wall_id) {
-                if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) 
+                if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1)
                     _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                    _fixed_wall_cells.push_back(&_cells(i, j));
-                
+                _fixed_wall_cells.push_back(&_cells(i, j));
+
             } else if (geometry_data.at(i_geom).at(j_geom) == 1) {
                 if (i == 0 or j == 0 or i == _domain.size_x + 1 or j == _domain.size_y + 1) {
                     // inflow
@@ -76,29 +76,28 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                     _inflow_cells.push_back(&_cells(i, j));
                 }
             } else if (geometry_data.at(i_geom).at(j_geom) == 2) {
-                    // outflow
-                    _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
-                    _outflow_cells.push_back(&_cells(i, j));
-                
-            } else if (geometry_data.at(i_geom).at(j_geom) >= 3&&geometry_data.at(i_geom).at(j_geom) <=7) {
-                    // fixed wall- No Slip
-                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                    _fixed_wall_cells.push_back(&_cells(i, j));
-            } 
-            else if (geometry_data.at(i_geom).at(j_geom) >= 9&&geometry_data.at(i_geom).at(j_geom) <=12) {
-                    // fixed wall- Free Slip
-                    _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                    _fixed_wall_cells_free_slip.push_back(&_cells(i, j));
-            } 
-            
+                // outflow
+                _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
+                _outflow_cells.push_back(&_cells(i, j));
+
+            } else if (geometry_data.at(i_geom).at(j_geom) >= 3 && geometry_data.at(i_geom).at(j_geom) <= 7) {
+                // fixed wall- No Slip
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _fixed_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) >= 9 && geometry_data.at(i_geom).at(j_geom) <= 12) {
+                // fixed wall- Free Slip
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                _fixed_wall_cells_free_slip.push_back(&_cells(i, j));
+            }
+
             ++i;
         }
         ++j;
     }
 
-    //Iterate over all cells and assign fluid borders
-    for (int i = 0; i <= _domain.size_x+1; ++i) {
-        for (int j = 0; j <= _domain.size_y+1; ++j) {
+    // Iterate over all cells and assign fluid borders
+    for (int i = 0; i <= _domain.size_x + 1; ++i) {
+        for (int j = 0; j <= _domain.size_y + 1; ++j) {
 
             if (i >= 1) {
                 _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);

@@ -42,20 +42,20 @@ Case::Case(std::string file_name, int argn, char **args) {
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
 
-    std::string  geom_name; /*geometry file name for the problem*/
-    double UIN;      /* inflow velocity x-direction */
-    double VIN;      /* inflow velocity y-direction */
-    int wallnum;     /* wall num */
-    std::map<int, double> wall_vel;  /* wall velocities */
+    std::string geom_name;          /*geometry file name for the problem*/
+    double UIN;                     /* inflow velocity x-direction */
+    double VIN;                     /* inflow velocity y-direction */
+    int wallnum;                    /* wall num */
+    std::map<int, double> wall_vel; /* wall velocities */
 
     bool energy_on = false;
     std::string energy_eq = "off";
-    double TI;       /* initial temperature */
-    double Pr;       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
-    double beta;     /* thermal expansion coefficient*/
-    std::map<int, double> wall_temp;  /* wall temperatures */
+    double TI;                       /* initial temperature */
+    double Pr;                       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
+    double beta;                     /* thermal expansion coefficient*/
+    std::map<int, double> wall_temp; /* wall temperatures */
 
-    wallnum = 0;     /* init wall num to zero for easier file reading*/
+    wallnum = 0; /* init wall num to zero for easier file reading*/
     geom_name = _geom_name;
     if (file.is_open()) {
 
@@ -89,10 +89,13 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") file >> energy_eq;
                 if (var == "TI") file >> TI;
                 if (var == "Pr") file >> Pr;
-                if (var == "alpha")  {file >> Pr; Pr = nu/Pr;} //read in alpha, convert to Pr
+                if (var == "alpha") {
+                    file >> Pr;
+                    Pr = nu / Pr;
+                } // read in alpha, convert to Pr
                 if (var == "beta") file >> beta;
                 if (var == "num_of_walls" || var == "num_walls") file >> wallnum;
-                for (int i = 0; i < wallnum; ++i){
+                for (int i = 0; i < wallnum; ++i) {
                     int wallIdx = i + 3;
                     std::string str = "wall_vel_" + std::to_string(wallIdx);
                     std::string temp_str = "wall_temp_" + std::to_string(wallIdx);
@@ -114,21 +117,19 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     // Parameter safety check
     const double zeroEpilon = 1e-05;
-    if (Pr < zeroEpilon)
-    {
+    if (Pr < zeroEpilon) {
         char buffer[1024];
-        snprintf(buffer, 1024, "Pr number = %f invalid.Reset to 1.0\n",Pr);
+        snprintf(buffer, 1024, "Pr number = %f invalid.Reset to 1.0\n", Pr);
         std::cerr << buffer;
         Pr = 1.0;
     }
-   
 
     _geom_name = geom_name;
     std::cout << "geom_name = " << geom_name << "\n";
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
-   
+
     // Check if need energy equation
     if (energy_eq.compare("on") == 0) {
         energy_on = true;
@@ -146,38 +147,39 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, GX, GY, energy_on, TI, Pr, beta);
-  
-   _discretization = Discretization(domain.dx, domain.dy, gamma);
+    _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, GX, GY, energy_on, TI,
+                    Pr, beta);
+
+    _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
 
     // Construct boundaries
-    if (_geom_name.compare("NONE") == 0) { //LidDrivenCavity
+    if (_geom_name.compare("NONE") == 0) { // LidDrivenCavity
         if (not _grid.moving_wall_cells().empty()) {
-        _boundaries.push_back(
-            std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
+            _boundaries.push_back(
+                std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
         }
         if (not _grid.fixed_wall_cells().empty()) {
             _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
-    }
-    else{ 
-        
+    } else {
+
         if (not _grid.fixed_wall_cells().empty()) {
-            if(energy_on) _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(),wall_temp));
-            else _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+            if (energy_on)
+                _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells(), wall_temp));
+            else
+                _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
         }
-        
+
         if (not _grid.inflow_cells().empty()) {
-            _boundaries.push_back(std::make_unique<InFlowBoundary>(_grid.inflow_cells(),UIN,VIN));
+            _boundaries.push_back(std::make_unique<InFlowBoundary>(_grid.inflow_cells(), UIN, VIN));
         }
-        
+
         if (not _grid.outflow_cells().empty()) {
             _boundaries.push_back(std::make_unique<OutFlowBoundary>(_grid.outflow_cells()));
         }
-        
     }
 }
 
@@ -254,13 +256,11 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    while(t < _t_end)
-    {
+    while (t < _t_end) {
         /*****
          apply boundary
         ******/
-        for (int i = 0; i < _boundaries.size(); ++i)
-        {
+        for (int i = 0; i < _boundaries.size(); ++i) {
             _boundaries[i]->apply(_field);
         }
 
@@ -271,22 +271,20 @@ void Case::simulate() {
         _field.calculate_fluxes(_grid);
         _field.calculate_rs(_grid);
 
-        //loops here a number of times 
+        // loops here a number of times
         int it = 0;
         double res = _tolerance + 1.0; // init res to be greater than tolerance to enter the loop
-        while (res > _tolerance && it++ < _max_iter)
-        {
-            res = _pressure_solver->solve(_field,_grid,_boundaries);
+        while (res > _tolerance && it++ < _max_iter) {
+            res = _pressure_solver->solve(_field, _grid, _boundaries);
         }
-        if (it >= _max_iter)
-        {
+        if (it >= _max_iter) {
             std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
         }
-        
+
         _field.calculate_velocities(_grid);
 
         /*****
-        increment time 
+        increment time
         ******/
         timestep++;
         t += dt;
@@ -294,32 +292,27 @@ void Case::simulate() {
         /*****
         intermediate output field
         ******/
-        if (t > _output_freq * output_counter)
-        {
+        if (t > _output_freq * output_counter) {
             output_vtk(timestep);
             output_counter = output_counter + 1;
         }
 
-       
         /*****
          Compute Courant number
         ******/
-        double CourantNum = fabs(_field.u(_grid.imax()/2,_grid.jmax()/2)) * dt/_grid.dx();
+        double CourantNum = fabs(_field.u(_grid.imax() / 2, _grid.jmax() / 2)) * dt / _grid.dx();
 
         /*****
          Console logging
         ******/
         {
             char buffer[1024];
-            snprintf(buffer,1024,"step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", 
-            timestep, t,res,CourantNum);
+            snprintf(buffer, 1024, "step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", timestep, t, res,
+                     CourantNum);
             std::cout << buffer;
 #if IS_DETAIL_LOG
-            snprintf(buffer,1024,"T_l = %.3e, U_l = %.3e, V_l = %.3e, p_l = %.3e\n", 
-            _field.T(2,_grid.jmax()/2),
-            _field.u(2,_grid.jmax()/2),  _field.v(2,_grid.jmax()/2),
-             _field.p(2,_grid.jmax()/2)
-            );
+            snprintf(buffer, 1024, "T_l = %.3e, U_l = %.3e, V_l = %.3e, p_l = %.3e\n", _field.T(2, _grid.jmax() / 2),
+                     _field.u(2, _grid.jmax() / 2), _field.v(2, _grid.jmax() / 2), _field.p(2, _grid.jmax() / 2));
             std::cout << buffer;
 #endif
         }
@@ -395,11 +388,10 @@ void Case::output_vtk(int timestep, int my_rank) {
             Pressure->InsertNextTuple(&pressure);
         }
     }
-    if(_field.energy_on())
-    {
+    if (_field.energy_on()) {
         for (int j = 1; j < _grid.domain().size_y + 1; j++) {
             for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-                double temperature = _field.T(i,j);
+                double temperature = _field.T(i, j);
                 Temperature->InsertNextTuple(&temperature);
             }
         }
@@ -426,7 +418,6 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
@@ -437,48 +428,46 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->GetCellData()->AddArray(Geometry);
 
     // Add Temperature to Structured Grid
-    if(_field.energy_on()){
+    if (_field.energy_on()) {
         structuredGrid->GetCellData()->AddArray(Temperature);
     }
 
-    #if IS_DETAIL_LOG
-        // F Array
-        vtkDoubleArray *farray = vtkDoubleArray::New();
-        farray->SetName("F");
-        farray->SetNumberOfComponents(1);
+#if IS_DETAIL_LOG
+    // F Array
+    vtkDoubleArray *farray = vtkDoubleArray::New();
+    farray->SetName("F");
+    farray->SetNumberOfComponents(1);
 
-        // G Array
-        vtkDoubleArray *garray = vtkDoubleArray::New();
-        garray->SetName("G");
-        garray->SetNumberOfComponents(1);
+    // G Array
+    vtkDoubleArray *garray = vtkDoubleArray::New();
+    garray->SetName("G");
+    garray->SetNumberOfComponents(1);
 
-          // rs Array
-        vtkDoubleArray *rsarray = vtkDoubleArray::New();
-       rsarray->SetName("rs");
-        rsarray->SetNumberOfComponents(1);
+    // rs Array
+    vtkDoubleArray *rsarray = vtkDoubleArray::New();
+    rsarray->SetName("rs");
+    rsarray->SetNumberOfComponents(1);
 
-        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
-            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-                double f = _field.f(i, j);
-                farray->InsertNextTuple(&f);
+    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+            double f = _field.f(i, j);
+            farray->InsertNextTuple(&f);
 
-                double g = _field.g(i,j);
-                garray->InsertNextTuple(&g);
-
-            }
+            double g = _field.g(i, j);
+            garray->InsertNextTuple(&g);
         }
+    }
 
-        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
-            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
-                double rs = _field.rs(i, j);
-                rsarray->InsertNextTuple(&rs);
-            }
+    for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+        for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+            double rs = _field.rs(i, j);
+            rsarray->InsertNextTuple(&rs);
         }
-        structuredGrid->GetCellData()->AddArray(farray);
-        structuredGrid->GetCellData()->AddArray(garray);
-        structuredGrid->GetCellData()->AddArray(rsarray);
-    #endif
-
+    }
+    structuredGrid->GetCellData()->AddArray(farray);
+    structuredGrid->GetCellData()->AddArray(garray);
+    structuredGrid->GetCellData()->AddArray(rsarray);
+#endif
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
