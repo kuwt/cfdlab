@@ -69,20 +69,20 @@ void Fields::calculate_fluxes(Grid &grid) {
 
         convective_term = Discretization::convection_u(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_U, i, j);
+        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term);
         if (_energy_on) {
-            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term) -
-                       0.5 * _beta * _dt * _gx * (_T(i, j) + _T(i + 1, j));
+            _F(i, j) +=  -0.5 * _beta * _dt * _gx * (_T(i, j) + _T(i + 1, j));
         } else {
-            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
+            _F(i, j) +=  _dt * _gx;
         }
 
         convective_term = Discretization::convection_v(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_V, i, j);
+         _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term);
         if (_energy_on) {
-            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term) -
-                       0.5 * _beta * _dt * _gy * (_T(i, j) + _T(i, j + 1));
+            _G(i, j) += -0.5 * _beta * _dt * _gy * (_T(i, j) + _T(i, j + 1));
         } else {
-            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
+            _G(i, j) += _dt * _gy;
         }
     }
 
@@ -204,13 +204,11 @@ double Fields::calculate_dt(Grid &grid) {
 
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all
     // critieria.
+    _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu)});
     if (_energy_on) {
         double alpha = _nu / _Pr;
-        _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu),
-                               1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * alpha)});
-    } else {
-        _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu)});
-    }
+        _dt = _tau * std::min({_dt, _tau * 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * alpha)});
+   }
     return _dt;
 }
 
