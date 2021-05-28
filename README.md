@@ -1,4 +1,8 @@
 This repository is a CFD Solver developed by Qianqian, Christina and Wing To from TUM CSE. It is built on top of Fluidchen from TUM Informatics, Chair of Scientific Computing in Computer Science
+## Feature
+1. Support the simulation of fluid flow and generation of files(.vtk) that can be visualized in paraview  
+2. Support artbitrary Geometry
+3. Support energy with Boussinesq Approximation
 
 ## Software Requirements
 * VTK 7 or higher
@@ -32,7 +36,7 @@ If you want to debug using gdb, do not forget to add debug option.
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```
 
-## Running
+## Running Example
 
 In order to run the code, the case file should be given as input parameter. The lid driven cavity case files are located in the `example_cases` directory. In the build directory, 
 
@@ -42,8 +46,29 @@ In order to run the code, the case file should be given as input parameter. The 
 
 This will run the case file and create the output folder `/full_path_to_this_repo_in_your_system/example_cases/LidDrivenCavity/LidDrivenCavityOutput` which holds the `.vtk` files of the solution.  Note that this may require write permissions in the given directory.
 
+## Config
+
+There are additional default config files located in the `configs` directory. Currently, cases like Karman Vortex Street, Flow Over Step, Fluid Trap and Rayleigh Benard convection are included. If you want to setup your own cases, please change the .dat file and the .pgm file accordingly. .dat file contains the parameters for the flow while .pgm file contains the geometry. Please note that the number of cells in the .dat file is needed to be aligned to that to the .pgm file in the way that the numbers in the .dat file should be smaller than that of .pgm by 2 in order to allow the creation of a layer of ghost boundary cells around the domain in the pgm file. \
+
+In addition, note the number convention in the pgm files:\
+- 0:  Fluid
+- 1:  Inflow
+- 2:  Outflow
+- 3-7:  Wall/Obstacle
+
+Furthermore, if you have to consider heat efect, in .dat file you have to set energy_eq to on while specify the wall temperature at the end of the .dat file. You can find Rayleigh Benard convection case as an example.
+
+Note that in the Lid Driven Cavity Example you do not need to specify or write anything as it is hard coded in the program as an example.
+
 ## Result Visualization
 
 You can use paraview to visualize the output .vtk file. Here is an example showing the velocity magnitude of the LidDrivenCavity problem.
 
-![sample LidDrivenCavity Velocity](docs/images/LidDrivenCavitySampleVelocityImage.png "Velocity")
+Lid Driven Cavity Example\
+![sample LidDrivenCavity Velocity](docs/images/LidDrivenCavitySampleVelocityImage.png "Lid")
+
+Support Arbitrary Geometry: Karman Vortex\
+![sample karman vortex](docs/images/karman.png "karman")
+
+Support Energy : Rayleigh Benard\
+![sample karman vortex](docs/images/RayleighBenard.png "karman")

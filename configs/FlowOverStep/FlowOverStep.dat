@@ -1,15 +1,22 @@
+#--------------------------------------------
+#           geometry file            
+#--------------------------------------------
+geo_file    FlowOverStep.pgm
+
+iproc       1
+jproc       1
 
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
-xlength      1
-ylength      1
+xlength      10
+ylength      2
 
 #--------------------------------------------
 #            number of cells
 #--------------------------------------------
-imax        50
-jmax        50
+imax        100
+jmax        20
 
 #--------------------------------------------
 #               time steps
@@ -18,14 +25,14 @@ jmax        50
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        50
+t_end        20
 tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.5
+dt_value     2.0
 
 #--------------------------------------------
 #               pressure
@@ -34,15 +41,15 @@ dt_value     0.5
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      100
+itermax      500
 eps          0.001
 omg          1.7
 gamma        0.5
 
 #--------------------------------------------
-#     Reynolds number (here: 1 / nu)
+#     kinematic viscosity
 #--------------------------------------------
-nu          0.01
+nu        0.001
 
 #--------------------------------------------
 #        gravity / external forces
@@ -61,4 +68,17 @@ PI          0
 UI          0
 VI          0
 
+#--------------------------------------------
+#       inlet velocity
+#--------------------------------------------
+UIN          1.0
+VIN          0
 
+#--------------------------------------------
+#          wall clusterss
+# num_of_walls:     number of walls
+# wall_temp<num>    wall temperature
+# - enter -1 for adiabatic wall
+#--------------------------------------------
+num_of_walls            1
+wall_vel_3              0

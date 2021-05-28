@@ -1,9 +1,13 @@
+#--------------------------------------------
+#           geometry file            
+#--------------------------------------------
+geo_file   NaturalConvection.pgm
 
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
-xlength      1
-ylength      1
+xlength      1.0
+ylength      1.0
 
 #--------------------------------------------
 #            number of cells
@@ -18,37 +22,33 @@ jmax        50
 # tau: safety factor for time step size control
 #--------------------------------------------
 dt           0.05
-t_end        50
+t_end        1000
 tau          0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.5
+dt_value     50
 
 #--------------------------------------------
 #               pressure
-# itermax: maximum number of pressure iterations
-# eps: tolerance for pressure iteration (residual < eps)
-# omg: relaxation factor for SOR
-# gamma: upwind differencing factor
 #--------------------------------------------
 itermax      100
-eps          0.001
+eps          0.00001
 omg          1.7
 gamma        0.5
 
 #--------------------------------------------
-#     Reynolds number (here: 1 / nu)
+#         kinematic viscosity
 #--------------------------------------------
-nu          0.01
+nu        0.002
 
 #--------------------------------------------
-#        gravity / external forces
+#        gravity
 #--------------------------------------------
 GX          0
-GY          0
+GY          -1.1
 
 #--------------------------------------------
 #         initial pressure
@@ -61,4 +61,32 @@ PI          0
 UI          0
 VI          0
 
+#--------------------------------------------
+#       inlet velocity
+#--------------------------------------------
+UIN          0
+VIN          0
 
+#--------------------------------------------
+#          energy equation
+#--------------------------------------------
+energy_eq   on
+TI          293
+TIN         0
+beta        0.00021
+alpha       0.00000237
+Pr          7
+
+#--------------------------------------------
+#          wall clusterss
+#--------------------------------------------
+num_walls       3
+
+wall_temp_3    	1.0
+wall_temp_4    	0.0
+wall_temp_5     -1  
+
+
+wall_vel_3      0
+wall_vel_4      0
+wall_vel_5      0  
