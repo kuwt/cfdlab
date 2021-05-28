@@ -488,4 +488,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+
+    // partitions the domain according to iproc and jproc
+
+    // ??? assigns bounds and neighbors to each process
+        // calculate the upper limit and lower limit
 }
