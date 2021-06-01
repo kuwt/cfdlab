@@ -18,7 +18,7 @@ class Communication {
     /****************
     * Communicate a field:
     * ******************/
-    static void communicate(/* field = field class? or vectors of subfields? */);
+    static void communicate(/* subfield, string = "pressure/temperature"*/);
 
     /*******************
      * Find a minimum value across all processes: //adaptive time step

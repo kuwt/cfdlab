@@ -114,7 +114,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     file.close();
-
+    //MPI_initialize or communitate::initialize
     // Parameter safety check
     const double zeroEpilon = 1e-05;
     if (Pr < zeroEpilon) {
@@ -268,7 +268,11 @@ void Case::simulate() {
          update field
         ******/
         _field.calculate_temperature(_grid);
+        // TODO: exchange temperature value
+
         _field.calculate_fluxes(_grid);
+        // TODO: exchange fluxes
+
         _field.calculate_rs(_grid);
 
         // loops here a number of times
@@ -282,6 +286,8 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
+        // TODO: exchange velocities
+
 
         /*****
         increment time
@@ -293,6 +299,7 @@ void Case::simulate() {
         intermediate output field
         ******/
         if (t > _output_freq * output_counter) {
+            // TODO: get my rank number and insert to the function below
             output_vtk(timestep);
             output_counter = output_counter + 1;
         }
@@ -326,6 +333,7 @@ void Case::simulate() {
     /*****
      Output the fields in the end
     ******/
+    // TODO: get my rank number and insert to the function below
     output_vtk(timestep);
     output_counter++;
 }
@@ -488,6 +496,13 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+
+
+    // if rank 0, compute decomposition boundaries like imin imax for each other processes
+    // if rank 0, send the information out
+    // if rank >0, wait until we receive information from rank 0
+    // if rank > 0, assign the information receive from rank 0 to domain.imin, domain.imax
+    
 
     // partitions the domain according to iproc and jproc
 

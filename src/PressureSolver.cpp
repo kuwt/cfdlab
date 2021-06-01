@@ -81,6 +81,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                         coeff * (Discretization::sor_helper(field.p_matrix(), i, j) - field.rs(i, j));
     }
 
+    // TODO: exchange pressure
+
+
+
     // compute residual
     double res = 0.0;
     double rloc = 0.0;
@@ -96,6 +100,7 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         res = rloc / (grid.fluid_cells().size());
         res = std::sqrt(res);
     }
+     // TODO: reduce communicate (barrier first or barrier in the reduce communicate)
 
     return res;
 }

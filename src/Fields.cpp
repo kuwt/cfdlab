@@ -202,6 +202,10 @@ double Fields::calculate_dt(Grid &grid) {
         vmax = abs(_V(i, j)) > vmax ? abs(_V(i, j)) : vmax;
     }
 
+     // TODO: send max velocities to master
+     // TODO: if rank 0, computes maximum and send to rank >0
+
+
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all
     // critieria.
     _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu)});
