@@ -25,38 +25,40 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
-    double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
+    double nu = 0;      /* viscosity   */
+    double UI = 0;      /* velocity x-direction */
+    double VI = 0;      /* velocity y-direction */
+    double PI = 0;      /* pressure */
+    double GX = 0;      /* gravitation x-direction */
+    double GY = 0;      /* gravitation y-direction */
+    double xlength = 0; /* length of the domain x-dir.*/
+    double ylength = 0; /* length of the domain y-dir.*/
+    double dt = 0;      /* time step */
+    int imax = 0;       /* number of cells x-direction*/
+    int jmax = 0;       /* number of cells y-direction*/
+    double gamma = 0;   /* uppwind differencing factor*/
+    double omg = 0;     /* relaxation factor */
+    double tau = 0;     /* safety factor for time step*/
+    int itermax = 0;    /* max. number of iterations for pressure per time step */
+    double eps =0;     /* accuracy bound for pressure*/
 
-    std::string geom_name;          /*geometry file name for the problem*/
-    double UIN;                     /* inflow velocity x-direction */
-    double VIN;                     /* inflow velocity y-direction */
-    int wallnum;                    /* wall num */
+    std::string geom_name = _geom_name;          /*geometry file name for the problem*/
+    double UIN = 0;                     /* inflow velocity x-direction */
+    double VIN = 0;                     /* inflow velocity y-direction */
+    int wallnum = 0;                    /* wall num */
     std::map<int, double> wall_vel; /* wall velocities */
 
     bool energy_on = false;
     std::string energy_eq = "off";
-    double TI;                       /* initial temperature */
-    double Pr;                       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
-    double beta;                     /* thermal expansion coefficient*/
+    double TI = 0;                       /* initial temperature */
+    double Pr = 0;                       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
+    double beta = 0;                     /* thermal expansion coefficient*/
     std::map<int, double> wall_temp; /* wall temperatures */
 
-    wallnum = 0; /* init wall num to zero for easier file reading*/
-    geom_name = _geom_name;
+    int iproc = 1;       /* number of processes per x   */
+    int jproc = 1;       /* number of processes per y   */
+    bool parallel_on = false;
+
     if (file.is_open()) {
 
         std::string var;
@@ -65,6 +67,8 @@ Case::Case(std::string file_name, int argn, char **args) {
             if (var[0] == '#') { /* ignore comment line*/
                 file.ignore(MAX_LINE_LENGTH, '\n');
             } else {
+                if (var == "iproc") file >> iproc; // TODO: check invalid user input e.g iproc not integer
+                if (var == "jproc") file >> jproc;
                 if (var == "xlength") file >> xlength;
                 if (var == "ylength") file >> ylength;
                 if (var == "nu") file >> nu;
@@ -134,6 +138,14 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (energy_eq.compare("on") == 0) {
         energy_on = true;
     }
+    _energy_On = energy_on;
+
+    // Check if need parallel
+    if (iproc != 1 || jproc != 1) {
+        parallel_on = true;
+    }
+     _parallel_On = parallel_on;
+     
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
