@@ -64,7 +64,21 @@ void Communication::finalize()
 * ******************/
 void Communication::communicate(const Grid &grid, Matrix<double> &mat)
 {
-    
+    //fill send buffer from mat
+    // send to LEFT neighbor and receive from RIGHT neighbor
+    // Get receive buffer to mat
+
+    // fill send buffer from mat
+    // send to RIGHT neighbor and receive from LEFT neighbor
+    // Get receive buffer to mat
+
+    // fill send buffer from mat
+    // send to TOP neighbor and receive from BOTTOM neighbor
+    // Get receive buffer to mat
+
+    // fill send buffer from mat
+    // send to BOTTOM neighbor and receive from TOP neighbor
+    // Get receive buffer to mat
 }
 
 /*******************
