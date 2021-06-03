@@ -76,8 +76,9 @@ class Case {
     int _rank;
     int _left_neighbour_rank;
     int _right_neighbour_rank;
-    int _top_neighbour_rank;
     int _bottom_neighbour_rank;
+    int _top_neighbour_rank;
+
 
     /**
      * @brief Creating file names from given input data file

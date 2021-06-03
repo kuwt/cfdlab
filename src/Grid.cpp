@@ -89,7 +89,20 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
                 _fixed_wall_cells_free_slip.push_back(&_cells(i, j));
             }
-
+            
+            // ghost cell, useful for parallelism only
+             if (i_geom == _domain.imin){
+                _ghost_cells_left.push_back(&_cells(i, j));
+             }
+             if (i_geom == _domain.imax -1){
+                _ghost_cells_right.push_back(&_cells(i, j));
+             }
+             if (i_geom == _domain.jmin){
+                _ghost_cells_bottom.push_back(&_cells(i, j));
+             }
+              if (i_geom == _domain.jmax -1){
+                _ghost_cells_top.push_back(&_cells(i, j));
+             }                                                      
             ++i;
         }
         ++j;
@@ -198,3 +211,11 @@ const std::vector<Cell *> &Grid::inflow_cells() const { return _inflow_cells; }
 const std::vector<Cell *> &Grid::outflow_cells() const { return _outflow_cells; }
 
 const std::vector<Cell *> &Grid::fixed_wall_cells_free_slip() const { return _fixed_wall_cells_free_slip; }
+
+const std::vector<Cell *> &Grid::ghost_cells_Left() const {return _ghost_cells_left;}
+
+const std::vector<Cell *> &Grid::ghost_cells_Right() const {return _ghost_cells_right;}
+
+const std::vector<Cell *> &Grid::ghost_cells_Bottom() const {return _ghost_cells_bottom;}
+
+const std::vector<Cell *> &Grid::ghost_cells_Top() const {return _ghost_cells_top;}

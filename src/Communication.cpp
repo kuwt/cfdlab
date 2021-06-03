@@ -1,8 +1,15 @@
 #include "Communication.hpp"
 #include <mpi.h>
 
+bool Communication::isBufInitialized = false;
+std::vector<double> Communication::bufSendx;
+std::vector<double> Communication::bufRecvx;
+std::vector<double> Communication::bufSendy;
+std::vector<double> Communication::bufRecvy;
+
 Communication::Communication()
-{}
+{
+}
 
 /****************
  * Initialize communication:
@@ -121,23 +128,111 @@ void Communication::communicateNeighbourInfo(int my_rank,
 /****************
 * Communicate a field:
 * ******************/
-void Communication::communicate(const Grid &grid, Matrix<double> &mat)
+void Communication::communicate(const Grid &grid, 
+                                Matrix<double> &mat,
+                                int left_neighbour_rank,
+                                int right_neighbour_rank,
+                                int bottom_neighbour_rank, 
+                                int top_neighbour_rank)
 {
+    if (isBufInitialized == false)
+    {
+        Communication::bufSendx.resize(grid.domain().size_x + 2,0);
+        Communication::bufRecvx.resize(grid.domain().size_x + 2,0);
+        Communication::bufSendy.resize(grid.domain().size_y + 2,0);
+        Communication::bufRecvy.resize(grid.domain().size_y + 2,0);
+        isBufInitialized = true;
+    }
     //fill send buffer from mat
     // send to LEFT neighbor and receive from RIGHT neighbor
     // Get receive buffer to mat
-
+    {
+        std::vector<Cell *> _cells = grid.ghost_cells_Left();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i()+1,pcell->j());
+        }
+        int rank_l = (left_neighbour_rank == -1) ? MPI_PROC_NULL : left_neighbour_rank;
+        int rank_r = (right_neighbour_rank == -1) ? MPI_PROC_NULL : right_neighbour_rank;
+        int chunk = grid.domain().size_y;
+        MPI_Sendrecv(&Communication::bufSendy[0], chunk, MPI_DOUBLE, rank_l, 0,
+                    &Communication::bufRecvy[0], chunk, MPI_DOUBLE, rank_r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        
+        _cells = grid.ghost_cells_Right();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            mat(pcell->i(),pcell->j()) = bufRecvy[pcell->j()];
+        }
+    }
     // fill send buffer from mat
     // send to RIGHT neighbor and receive from LEFT neighbor
     // Get receive buffer to mat
-  
+    {
+        std::vector<Cell *> _cells = grid.ghost_cells_Right();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i()-1,pcell->j());
+        }
+
+        int rank_l = (left_neighbour_rank == -1) ? MPI_PROC_NULL : left_neighbour_rank;
+        int rank_r = (right_neighbour_rank == -1) ? MPI_PROC_NULL : right_neighbour_rank;
+        int chunk = grid.domain().size_y;
+        MPI_Sendrecv(&Communication::bufSendy[0], chunk, MPI_DOUBLE, rank_r, 0,
+                    &Communication::bufRecvy[0], chunk, MPI_DOUBLE, rank_l, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        _cells = grid.ghost_cells_Left();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j());
+        }
+    }
+
     // fill send buffer from mat
     // send to TOP neighbor and receive from BOTTOM neighbor
     // Get receive buffer to mat
+    {
+        std::vector<Cell *> _cells = grid.ghost_cells_Top();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j()-1);
+        }
+
+        int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
+        int rank_b = (bottom_neighbour_rank == -1) ? MPI_PROC_NULL : bottom_neighbour_rank;
+        int chunk = grid.domain().size_x;
+        MPI_Sendrecv(&Communication::bufSendx[0], chunk, MPI_DOUBLE, rank_t, 0,
+                   &Communication::bufRecvx[0], chunk, MPI_DOUBLE, rank_b, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        _cells = grid.ghost_cells_Bottom();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j());
+        }
+    }
 
     // fill send buffer from mat
     // send to BOTTOM neighbor and receive from TOP neighbor
     // Get receive buffer to mat
+    {
+        std::vector<Cell *> _cells = grid.ghost_cells_Bottom();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j()+1);
+        }
+
+        int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
+        int rank_b = (bottom_neighbour_rank == -1) ? MPI_PROC_NULL : bottom_neighbour_rank;
+        int chunk = grid.domain().size_x;
+        MPI_Sendrecv(&Communication::bufSendx[0], chunk, MPI_DOUBLE, rank_b, 0,
+                    &Communication::bufRecvx[0], chunk, MPI_DOUBLE, rank_t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+   
+        _cells = grid.ghost_cells_Top();
+        for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
+            auto pcell = _cells[cell_iter];
+            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j());
+        }
+    }
+
 }
 
 /*******************

@@ -3,8 +3,16 @@
 #include "Datastructures.hpp"
 #include "Grid.hpp"
 #include "Fields.hpp"
+#include <vector>
 
 class Communication {
+  private:
+    static bool isBufInitialized;
+    static std::vector<double> bufSendx;
+    static std::vector<double> bufRecvx;
+    static std::vector<double> bufSendy;
+    static std::vector<double> bufRecvy;
+
   public:
 
     Communication();
@@ -32,7 +40,12 @@ class Communication {
     /****************
     * Communicate a field:
     * ******************/
-    static void communicate(const Grid &grid, Matrix<double> &mat);
+    static void communicate(const Grid &grid,
+                           Matrix<double> &mat,
+                           int left_neighbour_rank,
+                           int right_neighbour_rank,
+                           int bottom_neighbour_rank, 
+                           int top_neighbour_rank);
 
     /*******************
      * Find a minimum value across all processes: //adaptive time step
