@@ -25,6 +25,11 @@ class Communication {
     static void communicateDomainInfo(int my_rank, int their_rank, int &i_domain_min,int &i_domain_max, int &j_domain_min, int &j_domain_max);
 
     /****************
+    * Communicate Neighbour information:
+    * ******************/
+     static void communicateNeighbourInfo(int my_rank, int their_rank, int &left_neighbour_rank,int &right_neighbour_rank, int &bottom_neighbour_rank, int &top_neighbour_rank);
+
+    /****************
     * Communicate a field:
     * ******************/
     static void communicate(const Grid &grid, Matrix<double> &mat);

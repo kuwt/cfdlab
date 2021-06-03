@@ -68,12 +68,6 @@ void Communication::communicateDomainInfo(  int my_rank,
 
 {
     int mpi_status = MPI_SUCCESS;
-    int rank = -1;
-    mpi_status = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (MPI_SUCCESS != mpi_status){
-        std::cerr << "MPI_Comm_rank fail.\n";
-    }
-
     if (my_rank == 0){   
         int sendData[4] = {i_domain_min, i_domain_max, j_domain_min,j_domain_max};
         mpi_status = MPI_Send(&sendData, 4, MPI_INT, their_rank, 0, MPI_COMM_WORLD);
@@ -95,22 +89,48 @@ void Communication::communicateDomainInfo(  int my_rank,
     }
 }
 
+void Communication::communicateNeighbourInfo(int my_rank, 
+                                            int their_rank, 
+                                            int &left_neighbour_rank,
+                                            int &right_neighbour_rank, 
+                                            int &bottom_neighbour_rank, 
+                                            int &top_neighbour_rank)
+{
+    int mpi_status = MPI_SUCCESS;
+    if (my_rank == 0){   
+        int sendData[4] = {left_neighbour_rank, right_neighbour_rank, bottom_neighbour_rank,top_neighbour_rank};
+        mpi_status = MPI_Send(&sendData, 4, MPI_INT, their_rank, 0, MPI_COMM_WORLD);
+        if (MPI_SUCCESS != mpi_status){
+            std::cerr << "MPI_Send fail.\n";
+        }
+    }
+    else{
+        int recvData[4] = {-1,-1,-1,-1};
+        MPI_Status status;
+        mpi_status = MPI_Recv(&recvData, 4, MPI_INT, their_rank, 0, MPI_COMM_WORLD, &status);
+        if (MPI_SUCCESS != mpi_status){
+            std::cerr << "MPI_Recv fail.\n";
+        }
+        left_neighbour_rank = recvData[0];
+        right_neighbour_rank = recvData[1];
+        bottom_neighbour_rank = recvData[2];
+        top_neighbour_rank = recvData[3];
+    }
+}
+
 /****************
 * Communicate a field:
 * ******************/
 void Communication::communicate(const Grid &grid, Matrix<double> &mat)
 {
-    // Select field
-
-
     //fill send buffer from mat
     // send to LEFT neighbor and receive from RIGHT neighbor
     // Get receive buffer to mat
-    
+
     // fill send buffer from mat
     // send to RIGHT neighbor and receive from LEFT neighbor
     // Get receive buffer to mat
-
+  
     // fill send buffer from mat
     // send to TOP neighbor and receive from BOTTOM neighbor
     // Get receive buffer to mat

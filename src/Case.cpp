@@ -141,6 +141,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     _energy_On = energy_on;
     _rank = 0; // init to 0;
+    _left_neighbour_rank = -1;
+    _right_neighbour_rank = -1;
+    _top_neighbour_rank = -1;
+    _bottom_neighbour_rank = -1;
 
     // Check if need parallel
     if (iproc != 1 || jproc != 1) {
@@ -536,11 +540,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     if (_parallel_On)
     {
-          /*
-        numbering style: iproc = 4, jproc = 3
-        (1,3)   (2,3)   (3,3)   (4,3)
-        (1,2)   (2,2)   (3,2)   (4,2)
-        (1,1)   (2,1)   (3,1)   (4,1)
+        /* eg: iproc = 4, jproc = 3
+            (0,2)   (1,2)   (2,2)   (3,2)  ==  proc 2   proc 5   proc 8   proc 11
+            (0,1)   (1,1)   (2,1)   (3,1)  ==  proc 1   proc 4   proc 7   proc 10
+            (0,0)   (1,0)   (2,0)   (3,0)  ==  proc 0   proc 3   proc 6   proc 9
         */
         // if rank 0, compute decomposition boundaries like imin imax for each other processes
         // if rank 0, send the information out
@@ -567,34 +570,49 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             /*
             * Compute domain min max according to partition size and communicate
             */
-            /* eg: iproc = 4, jproc = 3
-                    send (1,1) -> proc 1
-                    send (2,1) -> proc 4
-                (1,3)   (2,3)   (3,3)   (4,3)  ==  proc 3   proc 6   proc 9   proc 12
-                (1,2)   (2,2)   (3,2)   (4,2)  ==  proc 2   proc 5   proc 8   proc 11
-                (1,1)   (2,1)   (3,1)   (4,1)  ==  proc 1   proc 4   proc 7   proc 10
-            */
-
             for (int i = 0; i < _iproc; ++i){
-                 for (int j = 0; i < _jproc; ++j){
+                 for (int j = 0; j < _jproc; ++j){
                     int i_domain_min = i * subsize_x;
                     int i_domain_max = std::min((i+1) * subsize_x,imax_domain);
-                    int j_domain_min = j * subsize_x;
-                    int j_domain_max = std::min((j+1) * subsize_x,jmax_domain);
+                    int j_domain_min = j * subsize_y;
+                    int j_domain_max = std::min((j+1) * subsize_y,jmax_domain);
 
-                    if(i == 0 && j == 0){ // master all domain
+                    int left_neighbour_rank = -1;
+                    if (i > 0){
+                        left_neighbour_rank = (i - 1) * _jproc + j;
+                    }
+                    int right_neighbour_rank = -1;
+                    if (i < _iproc-1){
+                        right_neighbour_rank = (i + 1) * _jproc + j;
+                    }
+                    int bottom_neighbour_rank= -1;
+                    if (j > 0){
+                        bottom_neighbour_rank = (i) * _jproc + j - 1;
+                    }
+                    int top_neighbour_rank = -1;
+                     if (j < _jproc-1){
+                        top_neighbour_rank = (i) * _jproc + j + 1;
+                    }
+                   
+                    if(i == 0 && j == 0){ // master own domain
                         domain.imin = i_domain_min;
                         domain.jmin = j_domain_min;
                         domain.imax = i_domain_max + 2;
                         domain.jmax = j_domain_max + 2;
                         domain.size_x = i_domain_max - i_domain_min;
                         domain.size_y = j_domain_max - j_domain_min;
+
+                        _left_neighbour_rank = left_neighbour_rank;
+                        _right_neighbour_rank = right_neighbour_rank;
+                        _bottom_neighbour_rank = bottom_neighbour_rank;
+                        _top_neighbour_rank = top_neighbour_rank;
                     }
-                    else // send save domain
+                    else // send slave domain
                     {
                         //communicate
                         int their_rank = i * _jproc + j;
                         Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+                        Communication::communicateNeighbourInfo(_rank,their_rank,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
                     }
                 }
             }
@@ -613,6 +631,16 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             domain.jmax = j_domain_max + 2;
             domain.size_x = i_domain_max - i_domain_min;
             domain.size_y = j_domain_max - j_domain_min;
+
+            int left_neighbour_rank = -1;
+            int right_neighbour_rank = -1;
+            int bottom_neighbour_rank= -1;
+            int top_neighbour_rank = -1;
+            Communication::communicateNeighbourInfo(_rank,their_rank,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
+            _left_neighbour_rank = left_neighbour_rank;
+            _right_neighbour_rank = right_neighbour_rank;
+            _bottom_neighbour_rank = bottom_neighbour_rank;
+            _top_neighbour_rank = top_neighbour_rank;
         }
     }
     else // not parallel
