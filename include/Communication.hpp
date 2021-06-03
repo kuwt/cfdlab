@@ -2,6 +2,7 @@
 
 #include "Datastructures.hpp"
 #include "Grid.hpp"
+#include "Fields.hpp"
 
 class Communication {
   public:
