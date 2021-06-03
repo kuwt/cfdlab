@@ -314,6 +314,10 @@ void Case::simulate() {
         double res = _tolerance + 1.0; // init res to be greater than tolerance to enter the loop
         while (res > _tolerance && it++ < _max_iter) {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
+            if (_parallel_On){
+                Communication::communicate(_grid,_field,"pressure");
+                res = Communication::reduce_sum(res);
+            }
         }
         if (it >= _max_iter) {
             std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
