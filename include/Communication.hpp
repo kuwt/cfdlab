@@ -1,14 +1,17 @@
 #pragma once
 
+#include "Datastructures.hpp"
+#include "Grid.hpp"
+
 class Communication {
   public:
 
-    Communication(/*neighbour */);
+    Communication();
     
    /****************
    * Initialize communication:
    * ******************/
-    static void init_parallel(/*args = num of processors?*/);
+    static void init_parallel(int argc, char ** argv, int &rank, int &num_proc);
 
     /****************
     * Finalize communication:
@@ -18,16 +21,16 @@ class Communication {
     /****************
     * Communicate a field:
     * ******************/
-    static void communicate(/* subfield, string = "pressure/temperature"*/);
+    static void communicate(const Grid &grid, Matrix<double> &mat);
 
     /*******************
      * Find a minimum value across all processes: //adaptive time step
      * *******************/
-    static double reduce_min(/* value */ );
+    static double reduce_min(const double value);
 
       /*******************
      * Find a minimum value across all processes: //residual
      * *******************/
-    static double reduce_sum(/*value */ );
+    static double reduce_sum(const double value);
 
 };
