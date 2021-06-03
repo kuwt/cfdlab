@@ -147,7 +147,9 @@ Case::Case(std::string file_name, int argn, char **args) {
         parallel_on = true;
     }
      _parallel_On = parallel_on;
-     
+     _jproc = jproc;
+     _iproc = iproc;
+
     // Set file names for geometry file and output directory
     set_file_names(file_name);
 
@@ -529,22 +531,95 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
 
+    if (_parallel_On)
+    {
+          /*
+        numbering style: iproc = 4, jproc = 3
+        (1,3)   (2,3)   (3,3)   (4,3)
+        (1,2)   (2,2)   (3,2)   (4,2)
+        (1,1)   (2,1)   (3,1)   (4,1)
+        */
+        // if rank 0, compute decomposition boundaries like imin imax for each other processes
+        // if rank 0, send the information out
 
-    // if rank 0, compute decomposition boundaries like imin imax for each other processes
-    // if rank 0, send the information out
-    // if rank >0, wait until we receive information from rank 0
-    // if rank > 0, assign the information receive from rank 0 to domain.imin, domain.imax
-    
+        if (_rank == 0) //master
+        {
+            /*
+            * Compute partition size according to number of processes assigned
+            */
+            int subsize_x = 0;
+            int subsize_y = 0;
+            
+            if(imax_domain % _iproc != 0){
+                subsize_x = imax_domain / _iproc + 1; //ceiling
+            }else{
+                subsize_x = imax_domain / _iproc;
+            }
+            if(jmax_domain % _jproc != 0){
+                subsize_y = jmax_domain / _jproc + 1; //ceiling
+            }else{
+                subsize_y = jmax_domain / _jproc;
+            }
 
-    // partitions the domain according to iproc and jproc
+            /*
+            * Compute domain min max according to partition size and communicate
+            */
+            /* eg: iproc = 4, jproc = 3
+                    send (1,1) -> proc 1
+                    send (2,1) -> proc 4
+                (1,3)   (2,3)   (3,3)   (4,3)  ==  proc 3   proc 6   proc 9   proc 12
+                (1,2)   (2,2)   (3,2)   (4,2)  ==  proc 2   proc 5   proc 8   proc 11
+                (1,1)   (2,1)   (3,1)   (4,1)  ==  proc 1   proc 4   proc 7   proc 10
+            */
 
-    // ??? assigns bounds and neighbors to each process
-        // calculate the upper limit and lower limit
+            for (int i = 0; i < _iproc; ++i){
+                 for (int j = 0; i < _jproc; ++j){
+                    int i_domain_min = i * subsize_x;
+                    int i_domain_max = std::min((i+1) * subsize_x,imax_domain);
+                    int j_domain_min = j * subsize_x;
+                    int j_domain_max = std::min((j+1) * subsize_x,jmax_domain);
+
+                    if(i == 0 && j == 0){ // master all domain
+                        domain.imin = i_domain_min;
+                        domain.jmin = j_domain_min;
+                        domain.imax = i_domain_max + 2;
+                        domain.jmax = j_domain_max + 2;
+                        domain.size_x = i_domain_max - i_domain_min;
+                        domain.size_y = j_domain_max - j_domain_min;
+                    }
+                    else // send save domain
+                    {
+                        //communicate
+                        int their_rank = i * _jproc + j;
+                        Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+                    }
+                }
+            }
+        }
+        else //slave
+        {
+            int i_domain_min = 0;
+            int i_domain_max = 0;
+            int j_domain_min = 0;
+            int j_domain_max = 0;
+            int their_rank = 0;
+            Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+            domain.imin = i_domain_min;
+            domain.jmin = j_domain_min;
+            domain.imax = i_domain_max + 2;
+            domain.jmax = j_domain_max + 2;
+            domain.size_x = i_domain_max - i_domain_min;
+            domain.size_y = j_domain_max - j_domain_min;
+        }
+    }
+    else // not parallel
+    {
+        domain.imin = 0;
+        domain.jmin = 0;
+        domain.imax = imax_domain + 2;
+        domain.jmax = jmax_domain + 2;
+        domain.size_x = imax_domain;
+        domain.size_y = jmax_domain;
+    }
 }

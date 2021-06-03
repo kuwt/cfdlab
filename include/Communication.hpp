@@ -20,6 +20,11 @@ class Communication {
     static void finalize();
 
     /****************
+    * Communicate Domain information:
+    * ******************/
+    static void communicateDomainInfo(int my_rank, int their_rank, int &i_domain_min,int &i_domain_max, int &j_domain_min, int &j_domain_max);
+
+    /****************
     * Communicate a field:
     * ******************/
     static void communicate(const Grid &grid, Fields &field, const std::string &nameOfField);

@@ -71,6 +71,8 @@ class Case {
 
     ///  Parallel option 
     bool _parallel_On;
+    int _iproc;
+    int _jproc;
     int _rank;
 
     /**

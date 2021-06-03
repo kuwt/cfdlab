@@ -59,6 +59,42 @@ void Communication::finalize()
     }
 }
 
+void Communication::communicateDomainInfo(  int my_rank, 
+                                            int their_rank, 
+                                            int &i_domain_min,
+                                            int &i_domain_max, 
+                                            int &j_domain_min, 
+                                            int &j_domain_max)
+
+{
+    int mpi_status = MPI_SUCCESS;
+    int rank = -1;
+    mpi_status = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (MPI_SUCCESS != mpi_status){
+        std::cerr << "MPI_Comm_rank fail.\n";
+    }
+
+    if (my_rank == 0){   
+        int sendData[4] = {i_domain_min, i_domain_max, j_domain_min,j_domain_max};
+        mpi_status = MPI_Send(&sendData, 4, MPI_INT, their_rank, 0, MPI_COMM_WORLD);
+        if (MPI_SUCCESS != mpi_status){
+            std::cerr << "MPI_Send fail.\n";
+        }
+    }
+    else{
+        int recvData[4] = {0,0,0,0};
+        MPI_Status status;
+        mpi_status = MPI_Recv(&recvData, 4, MPI_INT, their_rank, 0, MPI_COMM_WORLD, &status);
+        if (MPI_SUCCESS != mpi_status){
+            std::cerr << "MPI_Recv fail.\n";
+        }
+        i_domain_min = recvData[0];
+        i_domain_max = recvData[1];
+        j_domain_min = recvData[2];
+        j_domain_max = recvData[3];
+    }
+}
+
 /****************
 * Communicate a field:
 * ******************/
