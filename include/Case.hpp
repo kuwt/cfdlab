@@ -26,6 +26,7 @@ class Case {
      * @param[in] Input file name
      */
     Case(std::string file_name, int argn, char **args);
+    ~Case();
 
     /**
      * @brief Main function to simulate the flow until the end time.
@@ -64,6 +65,13 @@ class Case {
 
     /// Maximum number of iterations for the solver
     int _max_iter;
+
+    /// Energy option 
+    bool _energy_On;
+
+    ///  Parallel option 
+    bool _parallel_On;
+    int _rank;
 
     /**
      * @brief Creating file names from given input data file

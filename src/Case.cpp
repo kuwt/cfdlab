@@ -1,5 +1,6 @@
 #include "Case.hpp"
 #include "Enums.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -139,6 +140,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         energy_on = true;
     }
     _energy_On = energy_on;
+    _rank = 0; // init to 0;
 
     // Check if need parallel
     if (iproc != 1 || jproc != 1) {
@@ -148,6 +150,14 @@ Case::Case(std::string file_name, int argn, char **args) {
      
     // Set file names for geometry file and output directory
     set_file_names(file_name);
+
+    if (_parallel_On)
+    {
+        int rank = 0;
+        int num_proc = 0;
+        Communication::init_parallel(argn,args,rank,num_proc);
+        _rank = rank; 
+    }
 
     // Build up the domain
     Domain domain;
@@ -195,6 +205,14 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
 }
 
+Case::~Case()
+{
+    if (_parallel_On)
+    {
+        Communication::finalize();
+    }
+}
+   
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
@@ -275,15 +293,19 @@ void Case::simulate() {
         for (int i = 0; i < _boundaries.size(); ++i) {
             _boundaries[i]->apply(_field);
         }
-
+        
         /*****
          update field
         ******/
         _field.calculate_temperature(_grid);
-        // TODO: exchange temperature value
+        if (_parallel_On){
+            Communication::communicate(_grid,_field,"temperature");
+        }
 
         _field.calculate_fluxes(_grid);
-        // TODO: exchange fluxes
+        if (_parallel_On){
+            Communication::communicate(_grid,_field,"fluxes");
+        }
 
         _field.calculate_rs(_grid);
 
@@ -298,9 +320,9 @@ void Case::simulate() {
         }
 
         _field.calculate_velocities(_grid);
-        // TODO: exchange velocities
-
-
+        if (_parallel_On){
+            Communication::communicate(_grid,_field,"velocities");
+        }
         /*****
         increment time
         ******/
@@ -311,8 +333,7 @@ void Case::simulate() {
         intermediate output field
         ******/
         if (t > _output_freq * output_counter) {
-            // TODO: get my rank number and insert to the function below
-            output_vtk(timestep);
+            output_vtk(timestep,_rank);
             output_counter = output_counter + 1;
         }
 
@@ -324,7 +345,7 @@ void Case::simulate() {
         /*****
          Console logging
         ******/
-        {
+        if ((_parallel_On && _rank == 0) || !_parallel_On){
             char buffer[1024];
             snprintf(buffer, 1024, "step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", timestep, t, res,
                      CourantNum);
@@ -340,13 +361,15 @@ void Case::simulate() {
          Compute time step for next iteration
         ******/
         dt = _field.calculate_dt(_grid);
+        if (_parallel_On){
+            dt = Communication::reduce_min(dt);
+        }
     }
 
     /*****
      Output the fields in the end
     ******/
-    // TODO: get my rank number and insert to the function below
-    output_vtk(timestep);
+    output_vtk(timestep,_rank);
     output_counter++;
 }
 
