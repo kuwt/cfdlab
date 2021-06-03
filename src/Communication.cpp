@@ -62,7 +62,7 @@ void Communication::finalize()
 /****************
 * Communicate a field:
 * ******************/
-void Communication::communicate(const Grid &grid, Matrix<double> &mat)
+void Communication::communicate(const Grid &grid, Fields &field, const std::string &nameOfField)
 {
     //fill send buffer from mat
     // send to LEFT neighbor and receive from RIGHT neighbor
