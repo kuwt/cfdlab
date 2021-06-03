@@ -98,12 +98,15 @@ void Communication::communicateDomainInfo(  int my_rank,
 /****************
 * Communicate a field:
 * ******************/
-void Communication::communicate(const Grid &grid, Fields &field, const std::string &nameOfField)
+void Communication::communicate(const Grid &grid, Matrix<double> &mat)
 {
+    // Select field
+
+
     //fill send buffer from mat
     // send to LEFT neighbor and receive from RIGHT neighbor
     // Get receive buffer to mat
-
+    
     // fill send buffer from mat
     // send to RIGHT neighbor and receive from LEFT neighbor
     // Get receive buffer to mat

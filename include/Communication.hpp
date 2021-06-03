@@ -27,7 +27,7 @@ class Communication {
     /****************
     * Communicate a field:
     * ******************/
-    static void communicate(const Grid &grid, Fields &field, const std::string &nameOfField);
+    static void communicate(const Grid &grid, Matrix<double> &mat);
 
     /*******************
      * Find a minimum value across all processes: //adaptive time step

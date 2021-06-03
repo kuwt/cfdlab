@@ -301,12 +301,13 @@ void Case::simulate() {
         ******/
         _field.calculate_temperature(_grid);
         if (_parallel_On){
-            Communication::communicate(_grid,_field,"temperature");
+            Communication::communicate(_grid,_field.T_matrix());
         }
 
         _field.calculate_fluxes(_grid);
         if (_parallel_On){
-            Communication::communicate(_grid,_field,"fluxes");
+            Communication::communicate(_grid,_field.F_matrix());
+            Communication::communicate(_grid,_field.G_matrix());
         }
 
         _field.calculate_rs(_grid);
@@ -317,7 +318,7 @@ void Case::simulate() {
         while (res > _tolerance && it++ < _max_iter) {
             res = _pressure_solver->solve(_field, _grid, _boundaries);
             if (_parallel_On){
-                Communication::communicate(_grid,_field,"pressure");
+                Communication::communicate(_grid,_field.p_matrix());
                 res = Communication::reduce_sum(res);
             }
         }
@@ -327,7 +328,8 @@ void Case::simulate() {
 
         _field.calculate_velocities(_grid);
         if (_parallel_On){
-            Communication::communicate(_grid,_field,"velocities");
+            Communication::communicate(_grid,_field.u_matrix());
+            Communication::communicate(_grid,_field.v_matrix());
         }
         /*****
         increment time
