@@ -226,3 +226,10 @@ double Fields::dt() const { return _dt; }
 double &Fields::T(int i, int j) { return _T(i, j); }
 
 bool Fields::energy_on() { return _energy_on; }
+
+
+Matrix<double> &Fields::u_matrix() { return _U; }
+Matrix<double> &Fields::v_matrix() { return _V; }
+Matrix<double> &Fields::F_matrix() { return _F; }
+Matrix<double> &Fields::G_matrix() { return _G; }
+Matrix<double> &Fields::T_matrix() { return _T; }

@@ -100,6 +100,17 @@ class Fields {
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
 
+    /// velocity matrix access and modify
+    Matrix<double> &u_matrix();
+    Matrix<double> &v_matrix();
+
+    /// temperature matrix access and modify
+    Matrix<double> &T_matrix();
+
+    /// flux matrix access and modify
+    Matrix<double> &F_matrix();
+    Matrix<double> &G_matrix();
+
     /// get _energy_on
     bool energy_on();
 
