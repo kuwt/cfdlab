@@ -25,7 +25,7 @@ void FixedWallBoundary::apply(Fields &field) {
             field.u(i, j) = 0;
             field.v(i, j) = 0;
             field.u(i - 1, j) = -field.u(i - 1, j + 1);
-            field.v(i - 1, j) = -field.v(i + 1, j - 1);
+            field.v(i, j-1) = -field.v(i + 1, j - 1);
 
             if (walltemperature < (-1 + zeroEpilon)) { // Neumann adiabatic
                 field.T(i, j) = (field.T(i + 1, j) + field.T(i, j + 1)) / 2;

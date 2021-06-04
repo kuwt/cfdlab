@@ -91,16 +91,16 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             }
             
             // ghost cell, useful for parallelism only
-             if (i_geom == _domain.imin){
+             if (i_geom == _domain.imin && i_geom != 0){
                 _ghost_cells_left.push_back(&_cells(i, j));
              }
-             if (i_geom == _domain.imax -1){
+             if (i_geom == _domain.imax -1 && i_geom != _domain.domain_size_x + 1){
                 _ghost_cells_right.push_back(&_cells(i, j));
              }
-             if (i_geom == _domain.jmin){
+             if (j_geom == _domain.jmin && j_geom != 0){
                 _ghost_cells_bottom.push_back(&_cells(i, j));
              }
-              if (i_geom == _domain.jmax -1){
+              if (j_geom == _domain.jmax -1 && j_geom != _domain.domain_size_y + 1){
                 _ghost_cells_top.push_back(&_cells(i, j));
              }                                                      
             ++i;
