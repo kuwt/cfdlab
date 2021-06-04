@@ -349,7 +349,8 @@ void Case::simulate() {
                     _right_neighbour_rank,
                     _bottom_neighbour_rank,
                     _top_neighbour_rank);
-                res = Communication::reduce_sum(_rank,res);
+                res = Communication::reduce_sum(_rank,res); //can be more accuracte by considering global res
+                res = res / Communication::_num_proc;
             }
         }
         if (it >= _max_iter) {

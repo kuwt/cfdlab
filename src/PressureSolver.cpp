@@ -19,6 +19,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         boundaryCells.insert(boundaryCells.end(), grid.inflow_cells().begin(), grid.inflow_cells().end());
         boundaryCells.insert(boundaryCells.end(), grid.moving_wall_cells().begin(), grid.moving_wall_cells().end());
         for (auto boundaryCell : boundaryCells) {
+            if (boundaryCell->isGhost())
+            {
+                continue;
+            }
             // for inflow boundary, we assume that it locates at left
             // for outflow boundary, we assume that it locates at right
             // for moving wall boundary, we assume that it locates at top
@@ -63,6 +67,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         std::vector<Cell *> boundaryCells;
         boundaryCells.insert(boundaryCells.end(), grid.outflow_cells().begin(), grid.outflow_cells().end());
         for (auto boundaryCell : boundaryCells) {
+            if (boundaryCell->isGhost())
+            {
+                continue;
+            }
             // for inflow boundary, we assume that it locates at left
             // for outflow boundary, we assume that it locates at right
             // for moving wall boundary, we assume that it locates at top
@@ -74,6 +82,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
 
     // update p according to stencil
     for (auto currentCell : grid.fluid_cells()) {
+        if (currentCell->isGhost())
+        {
+            continue;
+        }
         int i = currentCell->i();
         int j = currentCell->j();
 
@@ -85,6 +97,10 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
     double rloc = 0.0;
 
     for (auto currentCell : grid.fluid_cells()) {
+        if (currentCell->isGhost())
+        {
+            continue;
+        }
         int i = currentCell->i();
         int j = currentCell->j();
 

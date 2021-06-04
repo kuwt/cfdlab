@@ -155,7 +155,7 @@ void Communication::communicate(const Grid &grid,
         }
         int rank_l = (left_neighbour_rank == -1) ? MPI_PROC_NULL : left_neighbour_rank;
         int rank_r = (right_neighbour_rank == -1) ? MPI_PROC_NULL : right_neighbour_rank;
-        int chunk = grid.domain().size_y;
+        int chunk = grid.domain().size_y + 2;
         MPI_Sendrecv(&Communication::bufSendy[0], chunk, MPI_DOUBLE, rank_l, 0,
                     &Communication::bufRecvy[0], chunk, MPI_DOUBLE, rank_r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         
@@ -177,7 +177,7 @@ void Communication::communicate(const Grid &grid,
 
         int rank_l = (left_neighbour_rank == -1) ? MPI_PROC_NULL : left_neighbour_rank;
         int rank_r = (right_neighbour_rank == -1) ? MPI_PROC_NULL : right_neighbour_rank;
-        int chunk = grid.domain().size_y;
+        int chunk = grid.domain().size_y + 2;
         MPI_Sendrecv(&Communication::bufSendy[0], chunk, MPI_DOUBLE, rank_r, 0,
                     &Communication::bufRecvy[0], chunk, MPI_DOUBLE, rank_l, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -200,7 +200,7 @@ void Communication::communicate(const Grid &grid,
 
         int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
         int rank_b = (bottom_neighbour_rank == -1) ? MPI_PROC_NULL : bottom_neighbour_rank;
-        int chunk = grid.domain().size_x;
+        int chunk = grid.domain().size_x + 2;
         MPI_Sendrecv(&Communication::bufSendx[0], chunk, MPI_DOUBLE, rank_t, 0,
                    &Communication::bufRecvx[0], chunk, MPI_DOUBLE, rank_b, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -223,7 +223,7 @@ void Communication::communicate(const Grid &grid,
 
         int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
         int rank_b = (bottom_neighbour_rank == -1) ? MPI_PROC_NULL : bottom_neighbour_rank;
-        int chunk = grid.domain().size_x;
+        int chunk = grid.domain().size_x + 2;
         MPI_Sendrecv(&Communication::bufSendx[0], chunk, MPI_DOUBLE, rank_b, 0,
                     &Communication::bufRecvx[0], chunk, MPI_DOUBLE, rank_t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
    

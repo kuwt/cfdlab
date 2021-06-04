@@ -12,9 +12,10 @@ class Communication {
     static std::vector<double> bufRecvx;
     static std::vector<double> bufSendy;
     static std::vector<double> bufRecvy;
-    static int _num_proc;
+    
   public:
-
+    static int _num_proc;
+    
     Communication();
     
    /****************
