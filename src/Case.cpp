@@ -21,7 +21,7 @@ namespace filesystem = std::filesystem;
 #include <vtkTuple.h>
 
 #define IS_DETAIL_LOG (0)
-
+int g_rank = 0;
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
@@ -163,6 +163,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         int num_proc = 0;
         Communication::init_parallel(argn,args,rank,num_proc);
         _rank = rank; 
+        g_rank= rank;
     }
 
     // Build up the domain
@@ -293,13 +294,14 @@ void Case::simulate() {
     double output_counter = 0.0;
 
     while (t < _t_end) {
+
         /*****
          apply boundary
         ******/
         for (int i = 0; i < _boundaries.size(); ++i) {
             _boundaries[i]->apply(_field);
         }
-        
+
         /*****
          update field
         ******/
@@ -313,7 +315,7 @@ void Case::simulate() {
                 _bottom_neighbour_rank,
                 _top_neighbour_rank);
         }
-
+ 
         _field.calculate_fluxes(_grid);
         if (_parallel_On){
             Communication::communicate(
@@ -347,13 +349,15 @@ void Case::simulate() {
                     _right_neighbour_rank,
                     _bottom_neighbour_rank,
                     _top_neighbour_rank);
-                res = Communication::reduce_sum(res);
+                res = Communication::reduce_sum(_rank,res);
             }
         }
         if (it >= _max_iter) {
-            std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
+            if ((_parallel_On && _rank == 0) || !_parallel_On){
+             std::cerr << "Pressure Solver fails to converge at timestep " << timestep << "!\n";
+            }
         }
-
+ 
         _field.calculate_velocities(_grid);
         if (_parallel_On){
                 Communication::communicate(
@@ -376,7 +380,7 @@ void Case::simulate() {
         ******/
         timestep++;
         t += dt;
-
+   
         /*****
         intermediate output field
         ******/
@@ -410,7 +414,7 @@ void Case::simulate() {
         ******/
         dt = _field.calculate_dt(_grid);
         if (_parallel_On){
-            dt = Communication::reduce_min(dt);
+            dt = Communication::reduce_min(_rank,dt);
         }
     }
 

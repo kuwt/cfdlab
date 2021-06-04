@@ -12,7 +12,7 @@ class Communication {
     static std::vector<double> bufRecvx;
     static std::vector<double> bufSendy;
     static std::vector<double> bufRecvy;
-
+    static int _num_proc;
   public:
 
     Communication();
@@ -50,11 +50,11 @@ class Communication {
     /*******************
      * Find a minimum value across all processes: //adaptive time step
      * *******************/
-    static double reduce_min(const double value);
+    static double reduce_min(int my_rank, const double value);
 
       /*******************
      * Find a minimum value across all processes: //residual
      * *******************/
-    static double reduce_sum(const double value);
+    static double reduce_sum(int my_rank,  const double value);
 
 };

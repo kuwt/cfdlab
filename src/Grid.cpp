@@ -112,6 +112,8 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         ++j;
     }
 
+
+
     // Iterate over all cells and assign fluid borders
     for (int i = 0; i <= _domain.size_x + 1; ++i) {
         for (int j = 0; j <= _domain.size_y + 1; ++j) {
