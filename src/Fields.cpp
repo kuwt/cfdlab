@@ -33,6 +33,9 @@ void Fields::calculate_temperature(Grid &grid) {
         double diffusion_term, convective_term;
         double alpha = _nu / _Pr; // thermal diffusivity
         for (auto fluid_cell : grid.fluid_cells()) {
+             if (fluid_cell->isGhost()){
+                continue;
+            }
             int i = fluid_cell->i();
             int j = fluid_cell->j();
 
