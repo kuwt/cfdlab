@@ -184,7 +184,7 @@ void Communication::communicate(const Grid &grid,
         _cells = grid.ghost_cells_Left();
         for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
             auto pcell = _cells[cell_iter];
-            mat(pcell->i(),pcell->j()) = bufSendy[pcell->j()];
+            mat(pcell->i(),pcell->j()) = bufRecvy[pcell->j()];
         }
     }
 
@@ -207,7 +207,7 @@ void Communication::communicate(const Grid &grid,
         _cells = grid.ghost_cells_Bottom();
         for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
             auto pcell = _cells[cell_iter];
-            mat(pcell->i(),pcell->j()) = bufSendy[pcell->j()];
+            mat(pcell->i(),pcell->j()) = bufRecvx[pcell->j()];
         }
     }
 
@@ -230,7 +230,7 @@ void Communication::communicate(const Grid &grid,
         _cells = grid.ghost_cells_Top();
         for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
             auto pcell = _cells[cell_iter];
-            mat(pcell->i(),pcell->j()) = bufSendy[pcell->j()];
+            mat(pcell->i(),pcell->j()) = bufRecvx[pcell->j()];
         }
     }
 
