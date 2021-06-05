@@ -20,7 +20,7 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-#define IS_DETAIL_LOG (1)
+#define IS_DETAIL_LOG (0)
 #if IS_DETAIL_LOG
 #include <memory>
     int simIter = 10;
