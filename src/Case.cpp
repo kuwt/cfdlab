@@ -21,6 +21,11 @@ namespace filesystem = std::filesystem;
 #include <vtkTuple.h>
 
 #define IS_DETAIL_LOG (0)
+#if IS_DETAIL_LOG
+#include <memory>
+    int simIter = 10;
+#endif
+
 int g_rank = 0;
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
@@ -293,8 +298,12 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
+#if IS_DETAIL_LOG
+    std::FILE* detaillog = std::fopen("./detaillog.log", "w");
+    while (timestep < simIter) {
+#else
     while (t < _t_end) {
-    //while (t < 3*dt) {
+#endif
         /*****
          apply boundary
         ******/
@@ -406,43 +415,53 @@ void Case::simulate() {
             snprintf(buffer, 1024, "step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", timestep, t, res,
                      CourantNum);
             std::cout << buffer;
+
 #if IS_DETAIL_LOG
+            std::fprintf(detaillog, "%s",buffer);
+
             int pointToObserveI =50;
             int pointToObserveJ =_grid.jmax() / 2;
             snprintf(buffer, 1024, "T = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.T(pointToObserveI,pointToObserveJ), _field.T(pointToObserveI-1, pointToObserveJ), _field.T(pointToObserveI+1, pointToObserveJ), 
             _field.T(pointToObserveI, pointToObserveJ - 1), _field.T(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 
             snprintf(buffer, 1024, "f = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.f(pointToObserveI,pointToObserveJ), _field.f(pointToObserveI-1, pointToObserveJ), _field.f(pointToObserveI+1, pointToObserveJ), 
             _field.f(pointToObserveI, pointToObserveJ - 1), _field.f(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 
             snprintf(buffer, 1024, "g = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.g(pointToObserveI,pointToObserveJ), _field.g(pointToObserveI-1, pointToObserveJ), _field.g(pointToObserveI+1, pointToObserveJ), 
             _field.g(pointToObserveI, pointToObserveJ - 1), _field.g(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 
             snprintf(buffer, 1024, "rs = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.rs(pointToObserveI,pointToObserveJ), _field.rs(pointToObserveI-1, pointToObserveJ), _field.rs(pointToObserveI+1, pointToObserveJ), 
             _field.rs(pointToObserveI, pointToObserveJ - 1), _field.rs(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 
             snprintf(buffer, 1024, "P = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.p(pointToObserveI,pointToObserveJ), _field.p(pointToObserveI-1, pointToObserveJ), _field.p(pointToObserveI+1, pointToObserveJ), 
             _field.p(pointToObserveI, pointToObserveJ - 1), _field.p(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
-
+            std::fprintf(detaillog,"%s", buffer);
+            
             snprintf(buffer, 1024, "u = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.u(pointToObserveI,pointToObserveJ), _field.u(pointToObserveI-1, pointToObserveJ), _field.u(pointToObserveI+1, pointToObserveJ), 
             _field.u(pointToObserveI, pointToObserveJ - 1), _field.u(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 
             snprintf(buffer, 1024, "v = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
             _field.v(pointToObserveI,pointToObserveJ), _field.v(pointToObserveI-1, pointToObserveJ), _field.v(pointToObserveI+1, pointToObserveJ), 
             _field.v(pointToObserveI, pointToObserveJ - 1), _field.v(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
 #endif
         }
 
@@ -460,6 +479,10 @@ void Case::simulate() {
     ******/
     output_vtk(timestep,_rank);
     output_counter++;
+
+#if IS_DETAIL_LOG
+    std::fclose(detaillog);
+#endif
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
