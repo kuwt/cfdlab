@@ -20,7 +20,7 @@ namespace filesystem = std::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-#define IS_DETAIL_LOG (0)
+#define IS_DETAIL_LOG (1)
 #if IS_DETAIL_LOG
 #include <memory>
     int simIter = 10;
@@ -299,7 +299,6 @@ void Case::simulate() {
     double output_counter = 0.0;
 
 #if IS_DETAIL_LOG
-    std::FILE* detaillog = std::fopen("./detaillog.log", "w");
     while (timestep < simIter) {
 #else
     while (t < _t_end) {
@@ -417,6 +416,7 @@ void Case::simulate() {
             std::cout << buffer;
 
 #if IS_DETAIL_LOG
+            std::FILE* detaillog = std::fopen("./detaillog.log", "a");
             std::fprintf(detaillog, "%s",buffer);
 
             int pointToObserveI =50;
@@ -462,6 +462,8 @@ void Case::simulate() {
             _field.v(pointToObserveI, pointToObserveJ - 1), _field.v(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
             std::fprintf(detaillog, "%s",buffer);
+
+            std::fclose(detaillog);
 #endif
         }
 
@@ -479,10 +481,6 @@ void Case::simulate() {
     ******/
     output_vtk(timestep,_rank);
     output_counter++;
-
-#if IS_DETAIL_LOG
-    std::fclose(detaillog);
-#endif
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -647,9 +645,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         */
         // if rank 0, compute decomposition boundaries like imin imax for each other processes
         // if rank 0, send the information out
-
+        
         if (_rank == 0) //master
         {
+            #if IS_DETAIL_LOG
+                std::FILE* detaillog = std::fopen("./Domain.log", "w");
+            #endif 
             /*
             * Compute partition size according to number of processes assigned
             */
@@ -666,10 +667,16 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             }else{
                 subsize_y = jmax_domain / _jproc;
             }
-
             /*
             * Compute domain min max according to partition size and communicate
             */
+            #if IS_DETAIL_LOG
+            char buffer[1024];
+            snprintf(buffer, 1024, "domain subsize_x,y = %d,%d\n", subsize_x,subsize_y);
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+            #endif 
+
             for (int i = 0; i < _iproc; ++i){
                  for (int j = 0; j < _jproc; ++j){
                     int i_domain_min = i * subsize_x;
@@ -694,6 +701,19 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                         top_neighbour_rank = (i) * _jproc + j + 1;
                     }
                    
+                    #if IS_DETAIL_LOG
+                    char buffer[1024];
+                    snprintf(buffer, 1024, "partition(%d,%d): min_i= %d, max_i= %d, min_j = %d, max_j = %d\n", 
+                                i,j,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+                    std::cout << buffer;
+                    std::fprintf(detaillog, "%s",buffer);
+
+                    snprintf(buffer, 1024, "partition(%d,%d): LeftNeighbourRank= %d, RightNeighbourRank= %d, BotNeighbourRank = %d, TopNeighbourRank = %d\n", 
+                                i,j,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
+                    std::cout << buffer;
+                    std::fprintf(detaillog, "%s",buffer);
+                    #endif 
+
                     if(i == 0 && j == 0){ // master own domain
                         domain.imin = i_domain_min;
                         domain.jmin = j_domain_min;
@@ -711,11 +731,14 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     {
                         //communicate
                         int their_rank = i * _jproc + j;
+                        std::cout << "Send Domain info to rank " << their_rank << "\n";
                         Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
                         Communication::communicateNeighbourInfo(_rank,their_rank,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
                     }
                 }
             }
+            std::cout << "rank " << _rank << " Successful Domain Communication.\n";
+            
         }
         else //slave
         {
@@ -741,6 +764,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             _right_neighbour_rank = right_neighbour_rank;
             _bottom_neighbour_rank = bottom_neighbour_rank;
             _top_neighbour_rank = top_neighbour_rank;
+             std::cout << "rank " << _rank << " Successful Domain Communication.\n";
         }
     }
     else // not parallel
