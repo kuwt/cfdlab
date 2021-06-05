@@ -243,28 +243,10 @@ double Communication::reduce_min(const int my_rank,const double value)
 {
     double localValue = value;
     double retValue = 0;
-    int mpi_status = MPI_Reduce(&localValue, &retValue, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    int mpi_status = MPI_Allreduce(&localValue, &retValue, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     if (MPI_SUCCESS != mpi_status){
-        std::cerr << "MPI_Reduce fail.\n";
+        std::cerr << "MPI_Allreduce fail.\n";
     }
-
-    if (my_rank == 0){   
-        for (int their_rank = 1; their_rank < _num_proc; ++their_rank)
-        {
-            mpi_status = MPI_Send(&retValue, 1, MPI_DOUBLE, their_rank, 0, MPI_COMM_WORLD);
-            if (MPI_SUCCESS != mpi_status){
-                std::cerr << "MPI_Send fail.\n";
-            }
-        }
-    }
-    else{
-        MPI_Status status;
-        mpi_status = MPI_Recv(&retValue, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
-        if (MPI_SUCCESS != mpi_status){
-            std::cerr << "MPI_Recv fail.\n";
-        }
-    }
-    
     return retValue;
 }
 
@@ -275,28 +257,10 @@ double Communication::reduce_sum(const int my_rank,const double value)
 {
     double localValue = value;
     double retValue = 0;
-    int mpi_status = MPI_Reduce(&localValue, &retValue, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    int mpi_status = MPI_Allreduce(&localValue, &retValue, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     if (MPI_SUCCESS != mpi_status){
-        std::cerr << "MPI_Reduce fail.\n";
+        std::cerr << "MPI_Allreduce fail.\n";
     }
-    
-    if (my_rank == 0){   
-        for (int their_rank = 1; their_rank < _num_proc; ++their_rank)
-        {
-            mpi_status = MPI_Send(&retValue, 1, MPI_DOUBLE, their_rank, 0, MPI_COMM_WORLD);
-            if (MPI_SUCCESS != mpi_status){
-                std::cerr << "MPI_Send fail.\n";
-            }
-        }
-    }
-    else{
-        MPI_Status status;
-        mpi_status = MPI_Recv(&retValue, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
-        if (MPI_SUCCESS != mpi_status){
-            std::cerr << "MPI_Recv fail.\n";
-        }
-    }
-
     return retValue;
 }
 
