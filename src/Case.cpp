@@ -26,7 +26,7 @@ namespace filesystem = std::filesystem;
     int simIter = 10;
 #endif
 
-int g_rank = 0;
+int g_rank = 0; //for debug use
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
@@ -169,6 +169,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         Communication::init_parallel(argn,args,rank,num_proc);
         _rank = rank; 
         g_rank= rank;
+        assert(num_proc == _jproc * _iproc);
     }
 
     // Build up the domain
