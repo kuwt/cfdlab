@@ -294,7 +294,7 @@ void Case::simulate() {
     double output_counter = 0.0;
 
     while (t < _t_end) {
-
+    //while (t < 3*dt) {
         /*****
          apply boundary
         ******/
@@ -340,7 +340,7 @@ void Case::simulate() {
         int it = 0;
         double res = _tolerance + 1.0; // init res to be greater than tolerance to enter the loop
         while (res > _tolerance && it++ < _max_iter) {
-            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            res = _pressure_solver->solve(_field, _grid, _boundaries,_parallel_On);
             if (_parallel_On){
                 Communication::communicate(
                     _grid,
@@ -350,7 +350,9 @@ void Case::simulate() {
                     _bottom_neighbour_rank,
                     _top_neighbour_rank);
                 res = Communication::reduce_sum(_rank,res); //can be more accuracte by considering global res
-                res = res / Communication::_num_proc;
+                int totalGridSize = Communication::reduce_sum(_rank,_grid.fluid_cells().size());
+                res = res / totalGridSize;
+                res = std::sqrt(res);
             }
         }
         if (it >= _max_iter) {
@@ -386,6 +388,7 @@ void Case::simulate() {
         intermediate output field
         ******/
         if (t > _output_freq * output_counter) {
+        //if (1){
             output_vtk(timestep,_rank);
             output_counter = output_counter + 1;
         }
@@ -404,8 +407,41 @@ void Case::simulate() {
                      CourantNum);
             std::cout << buffer;
 #if IS_DETAIL_LOG
-            snprintf(buffer, 1024, "T_l = %.3e, U_l = %.3e, V_l = %.3e, p_l = %.3e\n", _field.T(2, _grid.jmax() / 2),
-                     _field.u(2, _grid.jmax() / 2), _field.v(2, _grid.jmax() / 2), _field.p(2, _grid.jmax() / 2));
+            int pointToObserveI =50;
+            int pointToObserveJ =_grid.jmax() / 2;
+            snprintf(buffer, 1024, "T = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.T(pointToObserveI,pointToObserveJ), _field.T(pointToObserveI-1, pointToObserveJ), _field.T(pointToObserveI+1, pointToObserveJ), 
+            _field.T(pointToObserveI, pointToObserveJ - 1), _field.T(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "f = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.f(pointToObserveI,pointToObserveJ), _field.f(pointToObserveI-1, pointToObserveJ), _field.f(pointToObserveI+1, pointToObserveJ), 
+            _field.f(pointToObserveI, pointToObserveJ - 1), _field.f(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "g = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.g(pointToObserveI,pointToObserveJ), _field.g(pointToObserveI-1, pointToObserveJ), _field.g(pointToObserveI+1, pointToObserveJ), 
+            _field.g(pointToObserveI, pointToObserveJ - 1), _field.g(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "rs = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.rs(pointToObserveI,pointToObserveJ), _field.rs(pointToObserveI-1, pointToObserveJ), _field.rs(pointToObserveI+1, pointToObserveJ), 
+            _field.rs(pointToObserveI, pointToObserveJ - 1), _field.rs(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "P = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.p(pointToObserveI,pointToObserveJ), _field.p(pointToObserveI-1, pointToObserveJ), _field.p(pointToObserveI+1, pointToObserveJ), 
+            _field.p(pointToObserveI, pointToObserveJ - 1), _field.p(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "u = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.u(pointToObserveI,pointToObserveJ), _field.u(pointToObserveI-1, pointToObserveJ), _field.u(pointToObserveI+1, pointToObserveJ), 
+            _field.u(pointToObserveI, pointToObserveJ - 1), _field.u(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+
+            snprintf(buffer, 1024, "v = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.v(pointToObserveI,pointToObserveJ), _field.v(pointToObserveI-1, pointToObserveJ), _field.v(pointToObserveI+1, pointToObserveJ), 
+            _field.v(pointToObserveI, pointToObserveJ - 1), _field.v(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
 #endif
         }
