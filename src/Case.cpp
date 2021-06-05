@@ -649,7 +649,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         if (_rank == 0) //master
         {
             #if IS_DETAIL_LOG
-                std::FILE* detaillog = std::fopen("./Domain.log", "w");
+                std::FILE* domainlog = std::fopen("./Domain.log", "w");
             #endif 
             /*
             * Compute partition size according to number of processes assigned
@@ -674,7 +674,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             char buffer[1024];
             snprintf(buffer, 1024, "domain subsize_x,y = %d,%d\n", subsize_x,subsize_y);
             std::cout << buffer;
-            std::fprintf(detaillog, "%s",buffer);
+            std::fprintf(domainlog, "%s",buffer);
             #endif 
 
             for (int i = 0; i < _iproc; ++i){
@@ -706,12 +706,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                     snprintf(buffer, 1024, "partition(%d,%d): min_i= %d, max_i= %d, min_j = %d, max_j = %d\n", 
                                 i,j,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
                     std::cout << buffer;
-                    std::fprintf(detaillog, "%s",buffer);
+                    std::fprintf(domainlog, "%s",buffer);
 
                     snprintf(buffer, 1024, "partition(%d,%d): LeftNeighbourRank= %d, RightNeighbourRank= %d, BotNeighbourRank = %d, TopNeighbourRank = %d\n", 
                                 i,j,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
                     std::cout << buffer;
-                    std::fprintf(detaillog, "%s",buffer);
+                    std::fprintf(domainlog, "%s",buffer);
                     #endif 
 
                     if(i == 0 && j == 0){ // master own domain
@@ -738,7 +738,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
                 }
             }
             std::cout << "rank " << _rank << " Successful Domain Communication.\n";
-            
+             #if IS_DETAIL_LOG
+                std::fclose(domainlog);
+            #endif 
         }
         else //slave
         {
