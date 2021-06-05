@@ -195,7 +195,7 @@ void Communication::communicate(const Grid &grid,
         std::vector<Cell *> _cells = grid.ghost_cells_Top();
         for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
             auto pcell = _cells[cell_iter];
-            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j()-1);
+            bufSendx[pcell->j()] = mat(pcell->i(),pcell->j()-1);
         }
 
         int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
@@ -218,7 +218,7 @@ void Communication::communicate(const Grid &grid,
         std::vector<Cell *> _cells = grid.ghost_cells_Bottom();
         for (int cell_iter = 0; cell_iter < _cells.size(); ++cell_iter) {
             auto pcell = _cells[cell_iter];
-            bufSendy[pcell->j()] = mat(pcell->i(),pcell->j()+1);
+            bufSendx[pcell->j()] = mat(pcell->i(),pcell->j()+1);
         }
 
         int rank_t = (top_neighbour_rank == -1) ? MPI_PROC_NULL : top_neighbour_rank;
