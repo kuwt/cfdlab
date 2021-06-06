@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 
+
 namespace filesystem = std::filesystem;
 
 #include <vtkCellData.h>
@@ -293,7 +294,8 @@ void Case::set_file_names(std::string file_name) {
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
-
+    
+   
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
@@ -412,7 +414,7 @@ void Case::simulate() {
         ******/
         if ((_parallel_On && _rank == 0) || !_parallel_On){
             char buffer[1024];
-            snprintf(buffer, 1024, "step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", timestep, t, res,
+            snprintf(buffer, 1024, "step = %d, t = %.6f, p.solver it,res = %d,%.3e, CNum = %.3e\n", timestep, t, it, res,
                      CourantNum);
             std::cout << buffer;
 
