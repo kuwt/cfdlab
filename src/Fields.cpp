@@ -33,6 +33,9 @@ void Fields::calculate_temperature(Grid &grid) {
         double diffusion_term, convective_term;
         double alpha = _nu / _Pr; // thermal diffusivity
         for (auto fluid_cell : grid.fluid_cells()) {
+             if (fluid_cell->isGhost()){
+                continue;
+            }
             int i = fluid_cell->i();
             int j = fluid_cell->j();
 
@@ -64,6 +67,9 @@ void Fields::calculate_fluxes(Grid &grid) {
     // implementation of ws1 equation (9)
     // implementation of ws1 equation (10)
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
 
@@ -88,6 +94,9 @@ void Fields::calculate_fluxes(Grid &grid) {
 
     // calculate for boundary cells
     for (auto boundary_cell : grid.fixed_wall_cells()) {
+        if (boundary_cell->isGhost()){
+            continue;
+        }
         int i = boundary_cell->i();
         int j = boundary_cell->j();
 
@@ -127,18 +136,27 @@ void Fields::calculate_fluxes(Grid &grid) {
     }
 
     for (auto inflow_cell : grid.inflow_cells()) {
+        if (inflow_cell->isGhost()){
+            continue;
+        }
         // assume inflow from left
         int i = inflow_cell->i();
         int j = inflow_cell->j();
         _F(i, j) = _U(i, j);
     }
     for (auto outflow_cell : grid.outflow_cells()) {
+        if (outflow_cell->isGhost()){
+            continue;
+        }
         // assume outflow to right
         int i = outflow_cell->i();
         int j = outflow_cell->j();
         _F(i - 1, j) = _U(i - 1, j);
     }
     for (auto moving_cell : grid.moving_wall_cells()) {
+        if (moving_cell->isGhost()){
+            continue;
+        }
         // assume moving wall only on top
         int i = moving_cell->i();
         int j = moving_cell->j();
@@ -154,6 +172,9 @@ void Fields::calculate_rs(Grid &grid) {
     double dy = grid.dy();
 
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / dx + (_G(i, j) - _G(i, j - 1)) / dy);
@@ -168,6 +189,9 @@ void Fields::calculate_velocities(Grid &grid) {
     double dy = grid.dy();
 
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         if (fluid_cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
@@ -196,6 +220,9 @@ double Fields::calculate_dt(Grid &grid) {
     // finding umax in the domain
     // finding vmax in the domain
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         umax = abs(_U(i, j)) > umax ? abs(_U(i, j)) : umax;
@@ -226,3 +253,10 @@ double Fields::dt() const { return _dt; }
 double &Fields::T(int i, int j) { return _T(i, j); }
 
 bool Fields::energy_on() { return _energy_on; }
+
+
+Matrix<double> &Fields::u_matrix() { return _U; }
+Matrix<double> &Fields::v_matrix() { return _V; }
+Matrix<double> &Fields::F_matrix() { return _F; }
+Matrix<double> &Fields::G_matrix() { return _G; }
+Matrix<double> &Fields::T_matrix() { return _T; }

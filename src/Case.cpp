@@ -1,5 +1,6 @@
 #include "Case.hpp"
 #include "Enums.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -7,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+
 
 namespace filesystem = std::filesystem;
 
@@ -20,43 +22,50 @@ namespace filesystem = std::filesystem;
 #include <vtkTuple.h>
 
 #define IS_DETAIL_LOG (0)
+#if IS_DETAIL_LOG
+#include <memory>
+    int simIter = 10;
+#endif
 
+int g_rank = 0; //for debug use
 Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
-    double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
+    double nu = 0;      /* viscosity   */
+    double UI = 0;      /* velocity x-direction */
+    double VI = 0;      /* velocity y-direction */
+    double PI = 0;      /* pressure */
+    double GX = 0;      /* gravitation x-direction */
+    double GY = 0;      /* gravitation y-direction */
+    double xlength = 0; /* length of the domain x-dir.*/
+    double ylength = 0; /* length of the domain y-dir.*/
+    double dt = 0;      /* time step */
+    int imax = 0;       /* number of cells x-direction*/
+    int jmax = 0;       /* number of cells y-direction*/
+    double gamma = 0;   /* uppwind differencing factor*/
+    double omg = 0;     /* relaxation factor */
+    double tau = 0;     /* safety factor for time step*/
+    int itermax = 0;    /* max. number of iterations for pressure per time step */
+    double eps =0;     /* accuracy bound for pressure*/
 
-    std::string geom_name;          /*geometry file name for the problem*/
-    double UIN;                     /* inflow velocity x-direction */
-    double VIN;                     /* inflow velocity y-direction */
-    int wallnum;                    /* wall num */
+    std::string geom_name = _geom_name;          /*geometry file name for the problem*/
+    double UIN = 0;                     /* inflow velocity x-direction */
+    double VIN = 0;                     /* inflow velocity y-direction */
+    int wallnum = 0;                    /* wall num */
     std::map<int, double> wall_vel; /* wall velocities */
 
     bool energy_on = false;
     std::string energy_eq = "off";
-    double TI;                       /* initial temperature */
-    double Pr;                       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
-    double beta;                     /* thermal expansion coefficient*/
+    double TI = 0;                       /* initial temperature */
+    double Pr = 0;                       /* Prandtl number (Pr = nu / alpha), here directly given in .dat file*/
+    double beta = 0;                     /* thermal expansion coefficient*/
     std::map<int, double> wall_temp; /* wall temperatures */
 
-    wallnum = 0; /* init wall num to zero for easier file reading*/
-    geom_name = _geom_name;
+    int iproc = 1;       /* number of processes per x   */
+    int jproc = 1;       /* number of processes per y   */
+    bool parallel_on = false;
+
     if (file.is_open()) {
 
         std::string var;
@@ -65,6 +74,8 @@ Case::Case(std::string file_name, int argn, char **args) {
             if (var[0] == '#') { /* ignore comment line*/
                 file.ignore(MAX_LINE_LENGTH, '\n');
             } else {
+                if (var == "iproc") file >> iproc; // TODO: check invalid user input e.g iproc not integer
+                if (var == "jproc") file >> jproc;
                 if (var == "xlength") file >> xlength;
                 if (var == "ylength") file >> ylength;
                 if (var == "nu") file >> nu;
@@ -114,7 +125,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         }
     }
     file.close();
-
+    //MPI_initialize or communitate::initialize
     // Parameter safety check
     const double zeroEpilon = 1e-05;
     if (Pr < zeroEpilon) {
@@ -134,8 +145,33 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (energy_eq.compare("on") == 0) {
         energy_on = true;
     }
+    _energy_On = energy_on;
+    _rank = 0; // init to 0;
+    _left_neighbour_rank = -1;
+    _right_neighbour_rank = -1;
+    _top_neighbour_rank = -1;
+    _bottom_neighbour_rank = -1;
+
+    // Check if need parallel
+    if (iproc != 1 || jproc != 1) {
+        parallel_on = true;
+    }
+     _parallel_On = parallel_on;
+     _jproc = jproc;
+     _iproc = iproc;
+
     // Set file names for geometry file and output directory
     set_file_names(file_name);
+
+    if (_parallel_On)
+    {
+        int rank = 0;
+        int num_proc = 0;
+        Communication::init_parallel(argn,args,rank,num_proc);
+        _rank = rank; 
+        g_rank= rank;
+        assert(num_proc == _jproc * _iproc);
+    }
 
     // Build up the domain
     Domain domain;
@@ -183,6 +219,14 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
 }
 
+Case::~Case()
+{
+    if (_parallel_On)
+    {
+        Communication::finalize();
+    }
+}
+   
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
@@ -250,13 +294,18 @@ void Case::set_file_names(std::string file_name) {
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
-
+    
+   
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
 
+#if IS_DETAIL_LOG
+    while (timestep < simIter) {
+#else
     while (t < _t_end) {
+#endif
         /*****
          apply boundary
         ******/
@@ -268,32 +317,90 @@ void Case::simulate() {
          update field
         ******/
         _field.calculate_temperature(_grid);
+        if (_parallel_On){
+            Communication::communicate(
+                _grid,
+                _field.T_matrix(), 
+                _left_neighbour_rank,
+                _right_neighbour_rank,
+                _bottom_neighbour_rank,
+                _top_neighbour_rank);
+        }
+ 
         _field.calculate_fluxes(_grid);
+        if (_parallel_On){
+            Communication::communicate(
+                _grid,
+                _field.F_matrix(),
+                _left_neighbour_rank,
+                _right_neighbour_rank,
+                _bottom_neighbour_rank,
+                _top_neighbour_rank);
+            Communication::communicate(
+                _grid,
+                _field.G_matrix(),
+                _left_neighbour_rank,
+                _right_neighbour_rank,
+                _bottom_neighbour_rank,
+                _top_neighbour_rank);
+        }
+
         _field.calculate_rs(_grid);
 
         // loops here a number of times
         int it = 0;
         double res = _tolerance + 1.0; // init res to be greater than tolerance to enter the loop
         while (res > _tolerance && it++ < _max_iter) {
-            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            res = _pressure_solver->solve(_field, _grid, _boundaries,_parallel_On);
+            if (_parallel_On){
+                Communication::communicate(
+                    _grid,
+                    _field.p_matrix(),
+                    _left_neighbour_rank,
+                    _right_neighbour_rank,
+                    _bottom_neighbour_rank,
+                    _top_neighbour_rank);
+                res = Communication::reduce_sum(_rank,res); //can be more accuracte by considering global res
+                int totalGridSize = Communication::reduce_sum(_rank,_grid.fluid_cells().size());
+                res = res / totalGridSize;
+                res = std::sqrt(res);
+            }
         }
         if (it >= _max_iter) {
-            std::cerr << "Pressure Solver fails to converge at timestep" << timestep << "!\n";
+            if ((_parallel_On && _rank == 0) || !_parallel_On){
+             std::cerr << "Pressure Solver fails to converge at timestep " << timestep << "!\n";
+            }
         }
-
+ 
         _field.calculate_velocities(_grid);
-
+        if (_parallel_On){
+                Communication::communicate(
+                    _grid,
+                    _field.u_matrix(),
+                    _left_neighbour_rank,
+                    _right_neighbour_rank,
+                    _bottom_neighbour_rank,
+                    _top_neighbour_rank);
+                Communication::communicate(
+                    _grid,
+                    _field.v_matrix(),
+                    _left_neighbour_rank,
+                    _right_neighbour_rank,
+                    _bottom_neighbour_rank,
+                    _top_neighbour_rank);
+        }
         /*****
         increment time
         ******/
         timestep++;
         t += dt;
-
+   
         /*****
         intermediate output field
         ******/
         if (t > _output_freq * output_counter) {
-            output_vtk(timestep);
+        //if (1){
+            output_vtk(timestep,_rank);
             output_counter = output_counter + 1;
         }
 
@@ -305,15 +412,61 @@ void Case::simulate() {
         /*****
          Console logging
         ******/
-        {
+        if ((_parallel_On && _rank == 0) || !_parallel_On){
             char buffer[1024];
-            snprintf(buffer, 1024, "step = %d, t = %.3f, p.solver res = %.3e, CNum = %.3e\n", timestep, t, res,
+            snprintf(buffer, 1024, "step = %d, t = %.6f, p.solver it = %d, res = %.3e, CNum = %.3e\n", timestep, t, it, res,
                      CourantNum);
             std::cout << buffer;
+
 #if IS_DETAIL_LOG
-            snprintf(buffer, 1024, "T_l = %.3e, U_l = %.3e, V_l = %.3e, p_l = %.3e\n", _field.T(2, _grid.jmax() / 2),
-                     _field.u(2, _grid.jmax() / 2), _field.v(2, _grid.jmax() / 2), _field.p(2, _grid.jmax() / 2));
+            std::FILE* detaillog = std::fopen("./detaillog.log", "a");
+            std::fprintf(detaillog, "%s",buffer);
+
+            int pointToObserveI =50;
+            int pointToObserveJ =_grid.jmax() / 2;
+            snprintf(buffer, 1024, "T = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.T(pointToObserveI,pointToObserveJ), _field.T(pointToObserveI-1, pointToObserveJ), _field.T(pointToObserveI+1, pointToObserveJ), 
+            _field.T(pointToObserveI, pointToObserveJ - 1), _field.T(pointToObserveI, pointToObserveJ + 1));
             std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            snprintf(buffer, 1024, "f = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.f(pointToObserveI,pointToObserveJ), _field.f(pointToObserveI-1, pointToObserveJ), _field.f(pointToObserveI+1, pointToObserveJ), 
+            _field.f(pointToObserveI, pointToObserveJ - 1), _field.f(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            snprintf(buffer, 1024, "g = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.g(pointToObserveI,pointToObserveJ), _field.g(pointToObserveI-1, pointToObserveJ), _field.g(pointToObserveI+1, pointToObserveJ), 
+            _field.g(pointToObserveI, pointToObserveJ - 1), _field.g(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            snprintf(buffer, 1024, "rs = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.rs(pointToObserveI,pointToObserveJ), _field.rs(pointToObserveI-1, pointToObserveJ), _field.rs(pointToObserveI+1, pointToObserveJ), 
+            _field.rs(pointToObserveI, pointToObserveJ - 1), _field.rs(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            snprintf(buffer, 1024, "P = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.p(pointToObserveI,pointToObserveJ), _field.p(pointToObserveI-1, pointToObserveJ), _field.p(pointToObserveI+1, pointToObserveJ), 
+            _field.p(pointToObserveI, pointToObserveJ - 1), _field.p(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog,"%s", buffer);
+            
+            snprintf(buffer, 1024, "u = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.u(pointToObserveI,pointToObserveJ), _field.u(pointToObserveI-1, pointToObserveJ), _field.u(pointToObserveI+1, pointToObserveJ), 
+            _field.u(pointToObserveI, pointToObserveJ - 1), _field.u(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            snprintf(buffer, 1024, "v = %.3e,%.3e,%.3e,%.3e,%.3e\n", 
+            _field.v(pointToObserveI,pointToObserveJ), _field.v(pointToObserveI-1, pointToObserveJ), _field.v(pointToObserveI+1, pointToObserveJ), 
+            _field.v(pointToObserveI, pointToObserveJ - 1), _field.v(pointToObserveI, pointToObserveJ + 1));
+            std::cout << buffer;
+            std::fprintf(detaillog, "%s",buffer);
+
+            std::fclose(detaillog);
 #endif
         }
 
@@ -321,12 +474,15 @@ void Case::simulate() {
          Compute time step for next iteration
         ******/
         dt = _field.calculate_dt(_grid);
+        if (_parallel_On){
+            dt = Communication::reduce_min(_rank,dt);
+        }
     }
 
     /*****
      Output the fields in the end
     ******/
-    output_vtk(timestep);
+    output_vtk(timestep,_rank);
     output_counter++;
 }
 
@@ -482,15 +638,147 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
 
-    // partitions the domain according to iproc and jproc
+    if (_parallel_On)
+    {
+        /* eg: iproc = 4, jproc = 3
+            (0,2)   (1,2)   (2,2)   (3,2)  ==  proc 2   proc 5   proc 8   proc 11
+            (0,1)   (1,1)   (2,1)   (3,1)  ==  proc 1   proc 4   proc 7   proc 10
+            (0,0)   (1,0)   (2,0)   (3,0)  ==  proc 0   proc 3   proc 6   proc 9
+        */
+        // if rank 0, compute decomposition boundaries like imin imax for each other processes
+        // if rank 0, send the information out
+        
+        if (_rank == 0) //master
+        {
+            #if IS_DETAIL_LOG
+                std::FILE* domainlog = std::fopen("./Domain.log", "w");
+            #endif 
+            /*
+            * Compute partition size according to number of processes assigned
+            */
+            int subsize_x = 0;
+            int subsize_y = 0;
+            
+            if(imax_domain % _iproc != 0){
+                subsize_x = imax_domain / _iproc + 1; //ceiling
+            }else{
+                subsize_x = imax_domain / _iproc;
+            }
+            if(jmax_domain % _jproc != 0){
+                subsize_y = jmax_domain / _jproc + 1; //ceiling
+            }else{
+                subsize_y = jmax_domain / _jproc;
+            }
+            /*
+            * Compute domain min max according to partition size and communicate
+            */
+            #if IS_DETAIL_LOG
+            char buffer[1024];
+            snprintf(buffer, 1024, "domain subsize_x,y = %d,%d\n", subsize_x,subsize_y);
+            std::cout << buffer;
+            std::fprintf(domainlog, "%s",buffer);
+            #endif 
 
-    // ??? assigns bounds and neighbors to each process
-        // calculate the upper limit and lower limit
+            for (int i = 0; i < _iproc; ++i){
+                 for (int j = 0; j < _jproc; ++j){
+                    int i_domain_min = i * subsize_x;
+                    int i_domain_max = std::min((i+1) * subsize_x,imax_domain);
+                    int j_domain_min = j * subsize_y;
+                    int j_domain_max = std::min((j+1) * subsize_y,jmax_domain);
+
+                    int left_neighbour_rank = -1;
+                    if (i > 0){
+                        left_neighbour_rank = (i - 1) * _jproc + j;
+                    }
+                    int right_neighbour_rank = -1;
+                    if (i < _iproc-1){
+                        right_neighbour_rank = (i + 1) * _jproc + j;
+                    }
+                    int bottom_neighbour_rank= -1;
+                    if (j > 0){
+                        bottom_neighbour_rank = (i) * _jproc + j - 1;
+                    }
+                    int top_neighbour_rank = -1;
+                     if (j < _jproc-1){
+                        top_neighbour_rank = (i) * _jproc + j + 1;
+                    }
+                   
+                    #if IS_DETAIL_LOG
+                    char buffer[1024];
+                    snprintf(buffer, 1024, "partition(%d,%d): min_i= %d, max_i= %d, min_j = %d, max_j = %d\n", 
+                                i,j,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+                    std::cout << buffer;
+                    std::fprintf(domainlog, "%s",buffer);
+
+                    snprintf(buffer, 1024, "partition(%d,%d): LeftNeighbourRank= %d, RightNeighbourRank= %d, BotNeighbourRank = %d, TopNeighbourRank = %d\n", 
+                                i,j,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
+                    std::cout << buffer;
+                    std::fprintf(domainlog, "%s",buffer);
+                    #endif 
+
+                    if(i == 0 && j == 0){ // master own domain
+                        domain.imin = i_domain_min;
+                        domain.jmin = j_domain_min;
+                        domain.imax = i_domain_max + 2;
+                        domain.jmax = j_domain_max + 2;
+                        domain.size_x = i_domain_max - i_domain_min;
+                        domain.size_y = j_domain_max - j_domain_min;
+
+                        _left_neighbour_rank = left_neighbour_rank;
+                        _right_neighbour_rank = right_neighbour_rank;
+                        _bottom_neighbour_rank = bottom_neighbour_rank;
+                        _top_neighbour_rank = top_neighbour_rank;
+                    }
+                    else // send slave domain
+                    {
+                        //communicate
+                        int their_rank = i * _jproc + j;
+                        std::cout << "Send Domain info to rank " << their_rank << "\n";
+                        Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+                        Communication::communicateNeighbourInfo(_rank,their_rank,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
+                    }
+                }
+            }
+            std::cout << "rank " << _rank << " Successful Domain Communication.\n";
+             #if IS_DETAIL_LOG
+                std::fclose(domainlog);
+            #endif 
+        }
+        else //slave
+        {
+            int i_domain_min = 0;
+            int i_domain_max = 0;
+            int j_domain_min = 0;
+            int j_domain_max = 0;
+            int their_rank = 0;
+            Communication::communicateDomainInfo(_rank,their_rank,i_domain_min,i_domain_max,j_domain_min,j_domain_max);
+            domain.imin = i_domain_min;
+            domain.jmin = j_domain_min;
+            domain.imax = i_domain_max + 2;
+            domain.jmax = j_domain_max + 2;
+            domain.size_x = i_domain_max - i_domain_min;
+            domain.size_y = j_domain_max - j_domain_min;
+
+            int left_neighbour_rank = -1;
+            int right_neighbour_rank = -1;
+            int bottom_neighbour_rank= -1;
+            int top_neighbour_rank = -1;
+            Communication::communicateNeighbourInfo(_rank,their_rank,left_neighbour_rank,right_neighbour_rank,bottom_neighbour_rank,top_neighbour_rank);
+            _left_neighbour_rank = left_neighbour_rank;
+            _right_neighbour_rank = right_neighbour_rank;
+            _bottom_neighbour_rank = bottom_neighbour_rank;
+            _top_neighbour_rank = top_neighbour_rank;
+             std::cout << "rank " << _rank << " Successful Domain Communication.\n";
+        }
+    }
+    else // not parallel
+    {
+        domain.imin = 0;
+        domain.jmin = 0;
+        domain.imax = imax_domain + 2;
+        domain.jmax = jmax_domain + 2;
+        domain.size_x = imax_domain;
+        domain.size_y = jmax_domain;
+    }
 }

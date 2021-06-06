@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+extern int g_rank; // for debugging
 
 /**
  * @brief General 2D data structure around std::vector, in column

@@ -14,7 +14,9 @@ void FixedWallBoundary::apply(Fields &field) {
         auto pcell = _cells[cell_iter];
         int i = pcell->i();
         int j = pcell->j();
-
+        if (pcell->isGhost()){
+            continue;
+        }
         double walltemperature = 0;
         if (_wall_temperature.find(pcell->wall_id()) != _wall_temperature.end()) {
             walltemperature = _wall_temperature[pcell->wall_id()];
@@ -25,7 +27,7 @@ void FixedWallBoundary::apply(Fields &field) {
             field.u(i, j) = 0;
             field.v(i, j) = 0;
             field.u(i - 1, j) = -field.u(i - 1, j + 1);
-            field.v(i - 1, j) = -field.v(i + 1, j - 1);
+            field.v(i, j-1) = -field.v(i + 1, j - 1);
 
             if (walltemperature < (-1 + zeroEpilon)) { // Neumann adiabatic
                 field.T(i, j) = (field.T(i + 1, j) + field.T(i, j + 1)) / 2;
@@ -136,6 +138,9 @@ void MovingWallBoundary::apply(Fields &field) {
         auto pcell = _cells[cell_iter];
         int i = pcell->i();
         int j = pcell->j();
+        if (pcell->isGhost()){
+            continue;
+        }
 
         if (pcell->is_border(border_position::BOTTOM)) // top wall
         {
@@ -159,7 +164,9 @@ void InFlowBoundary::apply(Fields &field) {
         auto pcell = _cells[cell_iter];
         int i = pcell->i();
         int j = pcell->j();
-
+         if (pcell->isGhost()){
+            continue;
+        }
         // assume inflow from left
         field.u(i, j) = _inflow_velocity_x;
         field.v(i, j) = 2 * _inflow_velocity_y - field.v(i + 1, j);
@@ -180,7 +187,9 @@ void OutFlowBoundary::apply(Fields &field) {
         auto pcell = _cells[cell_iter];
         int i = pcell->i();
         int j = pcell->j();
-
+        if (pcell->isGhost()){
+            continue;
+        }
         // assume outflow to right
         // i() - 1 is the exact position of the boundary and we need to make it equal to i() -2
         // i() never appears in the simulation
