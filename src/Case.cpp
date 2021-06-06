@@ -414,7 +414,7 @@ void Case::simulate() {
         ******/
         if ((_parallel_On && _rank == 0) || !_parallel_On){
             char buffer[1024];
-            snprintf(buffer, 1024, "step = %d, t = %.6f, p.solver it,res = %d,%.3e, CNum = %.3e\n", timestep, t, it, res,
+            snprintf(buffer, 1024, "step = %d, t = %.6f, p.solver it = %d, res = %.3e, CNum = %.3e\n", timestep, t, it, res,
                      CourantNum);
             std::cout << buffer;
 
