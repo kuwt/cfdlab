@@ -3,6 +3,7 @@ This repository is a CFD Solver developed by Qianqian, Christina and Wing To fro
 1. Support the simulation of fluid flow and generation of files(.vtk) that can be visualized in paraview  
 2. Support artbitrary Geometry
 3. Support energy with Boussinesq Approximation
+4. Support MPI Parallelism
 
 ## Software Requirements
 * VTK 7 or higher
@@ -59,6 +60,16 @@ In addition, note the number convention in the pgm files:\
 Furthermore, if you have to consider heat efect, in .dat file you have to set energy_eq to on while specify the wall temperature at the end of the .dat file. You can find Rayleigh Benard convection case as an example.
 
 Note that in the Lid Driven Cavity Example you do not need to specify or write anything as it is hard coded in the program as an example.
+
+## MPI Parallelism
+
+You can use multi cores by using mpi Parallelism. We have made some configs that allow the use of that. For example `FluidTrapParallel`. 
+You can run it by:
+
+```shell
+mpirun -np 6 --oversubscribe ./fluidchen (Path to your directory)/configs/FluidTrapParallel/FluidTrap.dat
+```
+If you want to change the number of cores to run, change the number after -np and the corresponding parameters iproc and jproc in the config file accordingly.
 
 ## Result Visualization
 
