@@ -306,6 +306,15 @@ void Case::simulate() {
 #else
     while (t < _t_end) {
 #endif
+
+        /*****
+        Choose appropriate time step at the beginning 
+        ******/
+        dt = _field.calculate_dt(_grid);
+        if (_parallel_On){
+            dt = Communication::reduce_min(_rank,dt);
+        }
+
         /*****
          apply boundary
         ******/
@@ -468,14 +477,6 @@ void Case::simulate() {
 
             std::fclose(detaillog);
 #endif
-        }
-
-        /*****
-         Compute time step for next iteration
-        ******/
-        dt = _field.calculate_dt(_grid);
-        if (_parallel_On){
-            dt = Communication::reduce_min(_rank,dt);
         }
     }
 
