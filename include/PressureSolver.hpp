@@ -20,7 +20,7 @@ class PressureSolver {
      * @param[in] grid to be used
      * @param[in] boundary to be used
      */
-    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries, bool IsParalleOn) = 0;
 };
 
 /**
@@ -48,7 +48,7 @@ class SOR : public PressureSolver {
      * @param[in] grid to be used
      * @param[in] boundary to be used
      */
-    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
+    virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries, bool IsParalleOn);
 
   private:
     double _omega;

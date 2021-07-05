@@ -33,6 +33,9 @@ void Fields::calculate_temperature(Grid &grid) {
         double diffusion_term, convective_term;
         double alpha = _nu / _Pr; // thermal diffusivity
         for (auto fluid_cell : grid.fluid_cells()) {
+             if (fluid_cell->isGhost()){
+                continue;
+            }
             int i = fluid_cell->i();
             int j = fluid_cell->j();
 
@@ -64,30 +67,36 @@ void Fields::calculate_fluxes(Grid &grid) {
     // implementation of ws1 equation (9)
     // implementation of ws1 equation (10)
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
 
         convective_term = Discretization::convection_u(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_U, i, j);
+        _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term);
         if (_energy_on) {
-            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term) -
-                       0.5 * _beta * _dt * _gx * (_T(i, j) + _T(i + 1, j));
+            _F(i, j) +=  -0.5 * _beta * _dt * _gx * (_T(i, j) + _T(i + 1, j));
         } else {
-            _F(i, j) = _U(i, j) + _dt * (_nu * diffusion_term - convective_term + _gx);
+            _F(i, j) +=  _dt * _gx;
         }
 
         convective_term = Discretization::convection_v(_U, _V, i, j);
         diffusion_term = Discretization::diffusion(_V, i, j);
+         _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term);
         if (_energy_on) {
-            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term) -
-                       0.5 * _beta * _dt * _gy * (_T(i, j) + _T(i, j + 1));
+            _G(i, j) += -0.5 * _beta * _dt * _gy * (_T(i, j) + _T(i, j + 1));
         } else {
-            _G(i, j) = _V(i, j) + _dt * (_nu * diffusion_term - convective_term + _gy);
+            _G(i, j) += _dt * _gy;
         }
     }
 
     // calculate for boundary cells
     for (auto boundary_cell : grid.fixed_wall_cells()) {
+        if (boundary_cell->isGhost()){
+            continue;
+        }
         int i = boundary_cell->i();
         int j = boundary_cell->j();
 
@@ -127,18 +136,27 @@ void Fields::calculate_fluxes(Grid &grid) {
     }
 
     for (auto inflow_cell : grid.inflow_cells()) {
+        if (inflow_cell->isGhost()){
+            continue;
+        }
         // assume inflow from left
         int i = inflow_cell->i();
         int j = inflow_cell->j();
         _F(i, j) = _U(i, j);
     }
     for (auto outflow_cell : grid.outflow_cells()) {
+        if (outflow_cell->isGhost()){
+            continue;
+        }
         // assume outflow to right
         int i = outflow_cell->i();
         int j = outflow_cell->j();
         _F(i - 1, j) = _U(i - 1, j);
     }
     for (auto moving_cell : grid.moving_wall_cells()) {
+        if (moving_cell->isGhost()){
+            continue;
+        }
         // assume moving wall only on top
         int i = moving_cell->i();
         int j = moving_cell->j();
@@ -154,6 +172,9 @@ void Fields::calculate_rs(Grid &grid) {
     double dy = grid.dy();
 
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         _RS(i, j) = 1 / _dt * ((_F(i, j) - _F(i - 1, j)) / dx + (_G(i, j) - _G(i, j - 1)) / dy);
@@ -168,6 +189,9 @@ void Fields::calculate_velocities(Grid &grid) {
     double dy = grid.dy();
 
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         if (fluid_cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
@@ -196,6 +220,9 @@ double Fields::calculate_dt(Grid &grid) {
     // finding umax in the domain
     // finding vmax in the domain
     for (auto fluid_cell : grid.fluid_cells()) {
+        if (fluid_cell->isGhost()){
+            continue;
+        }
         int i = fluid_cell->i();
         int j = fluid_cell->j();
         umax = abs(_U(i, j)) > umax ? abs(_U(i, j)) : umax;
@@ -204,13 +231,11 @@ double Fields::calculate_dt(Grid &grid) {
 
     // min is taken since we want dt to be smaller than all three conditions. Only the minimum will satisfy all
     // critieria.
+    _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu)});
     if (_energy_on) {
         double alpha = _nu / _Pr;
-        _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu),
-                               1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * alpha)});
-    } else {
-        _dt = _tau * std::min({dx / umax, dy / vmax, 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * _nu)});
-    }
+        _dt = _tau * std::min({_dt, _tau * 1 / (1 / (dx * dx) + 1 / (dy * dy)) / (2 * alpha)});
+   }
     return _dt;
 }
 
@@ -228,3 +253,10 @@ double Fields::dt() const { return _dt; }
 double &Fields::T(int i, int j) { return _T(i, j); }
 
 bool Fields::energy_on() { return _energy_on; }
+
+
+Matrix<double> &Fields::u_matrix() { return _U; }
+Matrix<double> &Fields::v_matrix() { return _V; }
+Matrix<double> &Fields::F_matrix() { return _F; }
+Matrix<double> &Fields::G_matrix() { return _G; }
+Matrix<double> &Fields::T_matrix() { return _T; }

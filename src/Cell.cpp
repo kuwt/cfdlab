@@ -27,3 +27,6 @@ int Cell::j() const { return _j; }
 cell_type Cell::type() const { return _type; }
 
 int Cell::wall_id() const { return _id; }
+
+void Cell::setGhost() {_isGhost = true;}
+int Cell::isGhost() const {return _isGhost;}

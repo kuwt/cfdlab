@@ -81,6 +81,9 @@ class Cell {
     /// Getter of cell id
     int wall_id() const;
 
+    void setGhost(); 
+    int isGhost() const;
+
   private:
     /// x index
     int _i{0};
@@ -90,6 +93,8 @@ class Cell {
     cell_type _type{cell_type::DEFAULT};
     /// Cell id (only necessary for walls)
     int _id{0};
+
+    bool _isGhost{false};
 
     /// Vector of bools that holds border conditions. TOP-BOTTOM-LEFT-RIGHT
     std::array<bool, 4> _border{false, false, false, false};
